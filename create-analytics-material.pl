@@ -286,18 +286,23 @@ if ($input =~ m/^[CEA]$/i) {
                                 if ($event_event_type eq "problem_check") {
                                     my $problem_display_name = $event->{ "context" }->{ "module" }->{ "display_name" };
                                     my $event_event_source = $event->{ "event_source" };
-                                
+
                                     # Pre-course survey answers
                                     if ($problem_display_name eq "Pre-course survey" && $event_event_source eq "server") {
-                                        foreach my $raw_problem_key (keys %{ $event->{ 'event' }->{ 'answers' } }) {
-                                            if ($raw_problem_key =~ /(_[0-9]+_[0-9]+)$/) {
-                                                my $pre_survey_problem_key = "problem$1";
-                                                $student_activity_data{ "pre_survey_answers_keys" }{ $pre_survey_problem_key } = 1;
-                                                keys %{ $event->{ "event" }->{ "answers" } };
-                                                while (my($answer_key, $answer_value) = each %{ $event->{ "event" }->{ "answers" } }) {
+                                        foreach my $raw_problem_name (keys %{ $event->{ "event" }->{ "answers" } }) {
+                                            if ($raw_problem_name =~ /(_[0-9]+_[0-9]+)$/) {
+                                                my $problem_name = "problem$1";
+                                                $student_activity_data{ "pre_survey_answers_keys" }{ $problem_name } = 1;
+
+                                                my $answer_value = $event->{ "event" }->{ "answers" }{ $raw_problem_name };
+
+                                                # Special handling for arrays (multiple answer questions)
+                                                if(ref($answer_value) eq "ARRAY") {
+                                                    $student_activity_data{ $event_user_id }{ "post_survey_answers" }{ $problem_name } = "\"" . join(',',@{ $answer_value }) . "\"";
+                                                } else {
                                                     $answer_value =~ tr/"/'/;
                                                     $answer_value =~ tr/\r?\n/ /;
-                                                    $student_activity_data{ $event_user_id }{ "pre_survey_answers" }{ $answer_key } = "\"" . $answer_value . "\"";
+                                                    $student_activity_data{ $event_user_id }{ "post_survey_answers" }{ $problem_name } = "\"" . $answer_value . "\"";
                                                 }
                                             }
                                         }
@@ -305,15 +310,20 @@ if ($input =~ m/^[CEA]$/i) {
                                     
                                     # Post-course survey answers
                                     if ($problem_display_name eq "Post-survey" && $event_event_source eq "server") {
-                                        foreach my $raw_problem_key (keys %{ $event->{ 'event' }->{ 'answers' } }) {
-                                            if ($raw_problem_key =~ /(_[0-9]+_[0-9]+)$/) {
-                                                my $post_survey_problem_key = "problem$1";
-                                                $student_activity_data{ "post_survey_answers_keys" }{ $post_survey_problem_key } = 1;
-                                                keys %{ $event->{ "event" }->{ "answers" } };
-                                                while (my($answer_key, $answer_value) = each %{ $event->{ "event" }->{ "answers" } }) {
+                                        foreach my $raw_problem_name (keys %{ $event->{ "event" }->{ "answers" } }) {
+                                            if ($raw_problem_name =~ /(_[0-9]+_[0-9]+)$/) {
+                                                my $problem_name = "problem$1";
+                                                $student_activity_data{ "post_survey_answers_keys" }{ $problem_name } = 1;
+
+                                                my $answer_value = $event->{ "event" }->{ "answers" }{ $raw_problem_name };
+
+                                                # Special handling for arrays (multiple answer questions)
+                                                if(ref($answer_value) eq "ARRAY") {
+                                                    $student_activity_data{ $event_user_id }{ "post_survey_answers" }{ $problem_name } = "\"" . join(',',@{ $answer_value }) . "\"";
+                                                } else {
                                                     $answer_value =~ tr/"/'/;
                                                     $answer_value =~ tr/\r?\n/ /;
-                                                    $student_activity_data{ $event_user_id }{ "post_survey_answers" }{ $answer_key } = "\"" . $answer_value . "\"";
+                                                    $student_activity_data{ $event_user_id }{ "post_survey_answers" }{ $problem_name } = "\"" . $answer_value . "\"";
                                                 }
                                             }
                                         }
@@ -443,8 +453,8 @@ if ($input =~ m/^[CEA]$/i) {
 
         keys %student_activity_data;
         while (my($student_id, $activity_data) = each %student_activity_data) {
-            insert_student_activity_data_into_table($dbh, $student_id, $activity_data, "pre_survey_answers", sub { $_[0] =~ s/^[^_]+/problem/ });
-            insert_student_activity_data_into_table($dbh, $student_id, $activity_data, "post_survey_answers", sub { $_[0] =~ s/^[^_]+/problem/ });
+            insert_student_activity_data_into_table($dbh, $student_id, $activity_data, "pre_survey_answers");
+            insert_student_activity_data_into_table($dbh, $student_id, $activity_data, "post_survey_answers");
             insert_student_activity_data_into_table($dbh, $student_id, $activity_data, "video_activity");
             insert_student_activity_data_into_table($dbh, $student_id, $activity_data, "problem_activity");
             insert_student_activity_data_into_table($dbh, $student_id, $activity_data, "pre_roll_video_activity");
