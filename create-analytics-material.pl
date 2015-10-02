@@ -542,6 +542,36 @@ if ($input =~ m/^[CEA]$/i) {
         }
     }
     
+    # Export the whole database as .csv files
+    foreach my $table_iter ($dbh->tables()) {
+        if (index($table_iter, "sqlite") == -1 && $table_iter =~ /"main"\."([^"]+)"/) {
+            my $filename = "SAMCED-$1.csv";
+            open (my $fh, '>', "$dest_dir/$filename") or die "Failed to open file '$filename' for writing.";
+
+            #print "Exporting table $table_iter... $sth\n";
+            my $sth = $dbh->prepare("select * from $table_iter limit 1");
+            $sth->execute();
+            my @fields = @{ $sth->{NAME} };
+            my @types = @{ $sth->{TYPE} };
+            $sth->finish;
+            print $fh join(',',@fields);
+
+            $sth = $dbh->prepare("select * from $table_iter");
+            $sth->execute();
+            my @row;
+            while (@row = $sth->fetchrow_array) {
+                # Preprocess the values and add needed delimiters for different types.
+                for my $i (0 .. $#row) {
+                    if ($types[$i] eq "TEXT") {
+                        $row[$i] = "\"" . $row[$i] . "\"";
+                    }
+                }
+                print $fh "\n" . join(',',@row);
+            }
+            $sth->finish();
+        }
+    }
+
     print "Done with everything!\n\nExiting\n";
 } else {
     print "Exiting without creating analytics material.\n";
