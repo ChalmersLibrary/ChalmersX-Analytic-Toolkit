@@ -30,11 +30,12 @@ use DBI;
 use IO::Zlib;
 use Date::Parse;
 use Date::Format;
-use Date::Calc      qw( Delta_Days Time_to_Date );
+use Date::Calc      qw( Delta_Days Time_to_Date Add_Delta_Days );
 use Cwd             qw( abs_path );
 use File::Basename  qw( dirname );
 use JSON::XS;
 use File::Copy;
+use DateTime;
 
 # Auto flush the default buffer.
 $| = 1;
@@ -281,6 +282,12 @@ if ($input =~ m/^[CEA]$/i) {
                             my $event_course_id = $event->{ "context" }->{ "course_id" };
                             my $event_event_type = $event->{ "event_type" };
                             my $event_time = $event->{ "time" };
+                            my $event_date = "UNKNOWN";
+                            if ($event_time =~ /^([0-9]+-[0-9]+-[0-9]+)T/) {
+                                $event_date = $1;
+                                $event_date =~ s/-//g;
+                            }
+                            my $event_source = $event->{ "event_source" };
                             
                             if (index($event_course_id, $organization) != -1 && index($event_course_id, $course_id) != -1 && index($event_course_id, $course_run) != -1) {
                                 if ($event_event_type eq "problem_check") {
@@ -415,6 +422,24 @@ if ($input =~ m/^[CEA]$/i) {
                                     $student_activity_data{ $event_user_id }{ "textbook_activity" }{ $event_event_type }++;
                                 }
                                 
+                                # Web page activity
+                                if ($event_event_type =~ /\/progress$/) {
+                                    $event_database{ "page_activity_progress" }{ $event_user_id }{ "user_id" } = "\"" . $event_user_id . "\"";
+                                    $event_database{ "page_activity_progress" }{ $event_user_id }{ "date_" . $event_date }++;
+                                }
+                                if ($event_event_type =~ /\/info$/) {
+                                    $event_database{ "page_activity_info" }{ $event_user_id }{ "user_id" } = "\"" . $event_user_id . "\"";
+                                    $event_database{ "page_activity_info" }{ $event_user_id }{ "date_" . $event_date }++;
+                                }
+                                if ($event_event_type =~ /\/courseware$/) {
+                                    $event_database{ "page_activity_courseware" }{ $event_user_id }{ "user_id" } = "\"" . $event_user_id . "\"";
+                                    $event_database{ "page_activity_courseware" }{ $event_user_id }{ "date_" . $event_date }++;
+                                }
+                                if ($event_event_type =~ /\/discussion\/forum$/) {
+                                    $event_database{ "page_activity_discussion" }{ $event_user_id }{ "user_id" } = "\"" . $event_user_id . "\"";
+                                    $event_database{ "page_activity_discussion" }{ $event_user_id }{ "date_" . $event_date }++;
+                                }
+
                                 $events_belonging_to_course++;
                             } else {
                                 $events_not_belonging_to_course++;
@@ -427,6 +452,30 @@ if ($input =~ m/^[CEA]$/i) {
                 }
             }
             $iter_year += 1;
+        }
+
+        # Column names for tables 'page_activity_X'.
+        $event_database_meta{ "page_activity_progress" }{ "user_id" } = "TEXT";
+        $event_database_meta{ "page_activity_info" }{ "user_id" } = "TEXT";
+        $event_database_meta{ "page_activity_courseware" }{ "user_id" } = "TEXT";
+        $event_database_meta{ "page_activity_discussion" }{ "user_id" } = "TEXT";
+        my $page_activity_iter_date = DateTime->new(
+            day => (Time_to_Date($start_date))[2],
+            month => (Time_to_Date($start_date))[1],
+            year => (Time_to_Date($start_date))[0],
+        );
+        my $page_activity_end_date = DateTime->new(
+            day => (Time_to_Date($end_date))[2],
+            month => (Time_to_Date($end_date))[1],
+            year => (Time_to_Date($end_date))[0],
+        );
+        while ($page_activity_iter_date <= $page_activity_end_date) {
+            $page_activity_iter_date->add(days => 1);
+            my $iter_date_str = "date_" . $page_activity_iter_date->ymd('');
+            $event_database_meta{ "page_activity_progress" }{ $iter_date_str } = "INTEGER";
+            $event_database_meta{ "page_activity_info" }{ $iter_date_str } = "INTEGER";
+            $event_database_meta{ "page_activity_courseware" }{ $iter_date_str } = "INTEGER";
+            $event_database_meta{ "page_activity_discussion" }{ $iter_date_str } = "INTEGER";
         }
 
         # Finish up data for specific problem checks
