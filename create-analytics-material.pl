@@ -305,11 +305,11 @@ if ($input =~ m/^[CEA]$/i) {
 
                                                 # Special handling for arrays (multiple answer questions)
                                                 if(ref($answer_value) eq "ARRAY") {
-                                                    $student_activity_data{ $event_user_id }{ "post_survey_answers" }{ $problem_name } = "\"" . join(',',@{ $answer_value }) . "\"";
+                                                    $student_activity_data{ $event_user_id }{ "pre_survey_answers" }{ $problem_name } = "\"" . join(',',@{ $answer_value }) . "\"";
                                                 } else {
                                                     $answer_value =~ tr/"/'/;
                                                     $answer_value =~ tr/\r?\n/ /;
-                                                    $student_activity_data{ $event_user_id }{ "post_survey_answers" }{ $problem_name } = "\"" . $answer_value . "\"";
+                                                    $student_activity_data{ $event_user_id }{ "pre_survey_answers" }{ $problem_name } = "\"" . $answer_value . "\"";
                                                 }
                                             }
                                         }
