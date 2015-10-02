@@ -237,7 +237,7 @@ if ($input =~ m/^[CEA]$/i) {
                     }
                     
                     # Build old discussion forum table with aggregated data.
-                    create_std_user_table_from_table_names_stored_as_keys($dbh, "discussion_forum_activity", %{ $student_activity_data{ "discussion_forum_activity_keys" } });
+                    create_std_user_table_from_table_names_stored_as_keys($dbh, "discussion_forum_activity", "INTEGER", %{ $student_activity_data{ "discussion_forum_activity_keys" } });
                     
                     keys %student_activity_data;
                     while (my($student_id, $activity_data) = each %student_activity_data) {
@@ -489,15 +489,15 @@ if ($input =~ m/^[CEA]$/i) {
 
         # Create all needed tables and populate them with our aggregated and particularly interesting data.
         print "Storing aggregated and particulary interesting data that has been fetched from event files...\n\n";
-        create_std_user_table_from_table_names_stored_as_keys($dbh, "pre_survey_answers", %{ $student_activity_data{ "pre_survey_answers_keys" } }, "TEXT");
-        create_std_user_table_from_table_names_stored_as_keys($dbh, "post_survey_answers", %{ $student_activity_data{ "post_survey_answers_keys" } }, "TEXT");
-        create_std_user_table_from_table_names_stored_as_keys($dbh, "video_activity", %{ $student_activity_data{ "video_activity_keys" } });
-        create_std_user_table_from_table_names_stored_as_keys($dbh, "problem_activity", %{ $student_activity_data{ "problem_activity_keys" } });
-        create_std_user_table_from_table_names_stored_as_keys($dbh, "pre_roll_video_activity", %{ $student_activity_data{ "pre_roll_video_activity_keys" } });
-        create_std_user_table_from_table_names_stored_as_keys($dbh, "textbook_activity", %{ $student_activity_data{ "textbook_activity_keys" } });
+        create_std_user_table_from_table_names_stored_as_keys($dbh, "pre_survey_answers", "TEXT", %{ $student_activity_data{ "pre_survey_answers_keys" } });
+        create_std_user_table_from_table_names_stored_as_keys($dbh, "post_survey_answers", "TEXT", %{ $student_activity_data{ "post_survey_answers_keys" } });
+        create_std_user_table_from_table_names_stored_as_keys($dbh, "video_activity", "INTEGER", %{ $student_activity_data{ "video_activity_keys" } });
+        create_std_user_table_from_table_names_stored_as_keys($dbh, "problem_activity", "INTEGER", %{ $student_activity_data{ "problem_activity_keys" } });
+        create_std_user_table_from_table_names_stored_as_keys($dbh, "pre_roll_video_activity", "INTEGER", %{ $student_activity_data{ "pre_roll_video_activity_keys" } });
+        create_std_user_table_from_table_names_stored_as_keys($dbh, "textbook_activity", "INTEGER", %{ $student_activity_data{ "textbook_activity_keys" } });
         
         foreach my $problem_table_id (keys %problem_tables) {
-            create_std_user_table_from_table_names_stored_as_keys($dbh, $problem_table_id, %{ $student_activity_data{ $problem_table_id . "_keys" } });
+            create_std_user_table_from_table_names_stored_as_keys($dbh, $problem_table_id, "INTEGER", %{ $student_activity_data{ $problem_table_id . "_keys" } });
         }
 
         keys %student_activity_data;
@@ -564,11 +564,7 @@ sub exec_query {
 }
 
 sub create_std_user_table_from_table_names_stored_as_keys {
-    my ($dbh, $table_name, %table_names_stored_as_keys, $value_type) = @_;
-    
-    if (!$value_type) {
-        $value_type = "INTEGER"; # Set value to INTEGER as default.
-    }
+    my ($dbh, $table_name, $value_type, %table_names_stored_as_keys) = @_;
     
     (my $sanitized_table_name = $table_name) =~ s/[^A-Za-z0-9_]//g;
     
