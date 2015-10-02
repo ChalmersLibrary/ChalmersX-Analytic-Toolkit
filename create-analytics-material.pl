@@ -101,6 +101,8 @@ my %event_database = ();
 
 my %student_activity_data = ();
 
+my %table_file_streams = ();
+
 if ($input =~ m/^[CEA]$/i) {
     mkdir $dest_dir;
 
@@ -296,20 +298,26 @@ if ($input =~ m/^[CEA]$/i) {
 
                                     # Pre-course survey answers
                                     if ($problem_display_name eq "Pre-course survey" && $event_event_source eq "server") {
-                                        foreach my $raw_problem_name (keys %{ $event->{ "event" }->{ "answers" } }) {
-                                            if ($raw_problem_name =~ /(_[0-9]+_[0-9]+)$/) {
-                                                my $problem_name = "problem$1";
-                                                $student_activity_data{ "pre_survey_answers_keys" }{ $problem_name } = 1;
+                                        if (!$student_activity_data{ $event_user_id }{ "pre_survey_answers" }{ "time" } ||
+                                            str2time($event_time) > str2time($student_activity_data{ $event_user_id }{ "pre_survey_answers" }{ "time" })) 
+                                        {
+                                            $student_activity_data{ "pre_survey_answers_keys" }{ "time" } = 1;
+                                            $student_activity_data{ $event_user_id }{ "pre_survey_answers" }{ "time" } = "\"" . $event_time . "\"";
+                                            foreach my $raw_problem_name (keys %{ $event->{ "event" }->{ "answers" } }) {
+                                                if ($raw_problem_name =~ /(_[0-9]+_[0-9]+)$/) {
+                                                    my $problem_name = "problem$1";
+                                                    $student_activity_data{ "pre_survey_answers_keys" }{ $problem_name } = 1;
 
-                                                my $answer_value = $event->{ "event" }->{ "answers" }{ $raw_problem_name };
+                                                    my $answer_value = $event->{ "event" }->{ "answers" }{ $raw_problem_name };
 
-                                                # Special handling for arrays (multiple answer questions)
-                                                if(ref($answer_value) eq "ARRAY") {
-                                                    $student_activity_data{ $event_user_id }{ "pre_survey_answers" }{ $problem_name } = "\"" . join(',',@{ $answer_value }) . "\"";
-                                                } else {
-                                                    $answer_value =~ tr/"/'/;
-                                                    $answer_value =~ tr/\r?\n/ /;
-                                                    $student_activity_data{ $event_user_id }{ "pre_survey_answers" }{ $problem_name } = "\"" . $answer_value . "\"";
+                                                    # Special handling for arrays (multiple answer questions)
+                                                    if(ref($answer_value) eq "ARRAY") {
+                                                        $student_activity_data{ $event_user_id }{ "pre_survey_answers" }{ $problem_name } = "\"" . join(',',@{ $answer_value }) . "\"";
+                                                    } else {
+                                                        $answer_value =~ tr/"/'/;
+                                                        $answer_value =~ tr/\r?\n/ /;
+                                                        $student_activity_data{ $event_user_id }{ "pre_survey_answers" }{ $problem_name } = "\"" . $answer_value . "\"";
+                                                    }
                                                 }
                                             }
                                         }
@@ -317,20 +325,26 @@ if ($input =~ m/^[CEA]$/i) {
                                     
                                     # Post-course survey answers
                                     if ($problem_display_name eq "Post-survey" && $event_event_source eq "server") {
-                                        foreach my $raw_problem_name (keys %{ $event->{ "event" }->{ "answers" } }) {
-                                            if ($raw_problem_name =~ /(_[0-9]+_[0-9]+)$/) {
-                                                my $problem_name = "problem$1";
-                                                $student_activity_data{ "post_survey_answers_keys" }{ $problem_name } = 1;
+                                        if (!$student_activity_data{ $event_user_id }{ "post_survey_answers" }{ "time" } ||
+                                            str2time($event_time) > str2time($student_activity_data{ $event_user_id }{ "post_survey_answers" }{ "time" })) 
+                                        {
+                                            $student_activity_data{ "post_survey_answers_keys" }{ "time" } = 1;
+                                            $student_activity_data{ $event_user_id }{ "post_survey_answers" }{ "time" } = "\"" . $event_time . "\"";
+                                            foreach my $raw_problem_name (keys %{ $event->{ "event" }->{ "answers" } }) {
+                                                if ($raw_problem_name =~ /(_[0-9]+_[0-9]+)$/) {
+                                                    my $problem_name = "problem$1";
+                                                    $student_activity_data{ "post_survey_answers_keys" }{ $problem_name } = 1;
 
-                                                my $answer_value = $event->{ "event" }->{ "answers" }{ $raw_problem_name };
+                                                    my $answer_value = $event->{ "event" }->{ "answers" }{ $raw_problem_name };
 
-                                                # Special handling for arrays (multiple answer questions)
-                                                if(ref($answer_value) eq "ARRAY") {
-                                                    $student_activity_data{ $event_user_id }{ "post_survey_answers" }{ $problem_name } = "\"" . join(',',@{ $answer_value }) . "\"";
-                                                } else {
-                                                    $answer_value =~ tr/"/'/;
-                                                    $answer_value =~ tr/\r?\n/ /;
-                                                    $student_activity_data{ $event_user_id }{ "post_survey_answers" }{ $problem_name } = "\"" . $answer_value . "\"";
+                                                    # Special handling for arrays (multiple answer questions)
+                                                    if(ref($answer_value) eq "ARRAY") {
+                                                        $student_activity_data{ $event_user_id }{ "post_survey_answers" }{ $problem_name } = "\"" . join(',',@{ $answer_value }) . "\"";
+                                                    } else {
+                                                        $answer_value =~ tr/"/'/;
+                                                        $answer_value =~ tr/\r?\n/ /;
+                                                        $student_activity_data{ $event_user_id }{ "post_survey_answers" }{ $problem_name } = "\"" . $answer_value . "\"";
+                                                    }
                                                 }
                                             }
                                         }
