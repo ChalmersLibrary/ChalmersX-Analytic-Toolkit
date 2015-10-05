@@ -46,6 +46,9 @@
     + textbook_activity
         One row for each user, representing that users interaction with
         the textbooks in the course.
+    + page_activity_xxx
+        One row for each user and one column for each day, containing the 
+        number of times that user accessed the page xxx.
         
 2. Tips and tricks
 Save a sqlite table to a CSV file.
