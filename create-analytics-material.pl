@@ -296,10 +296,13 @@ if ($input =~ m/^[CEA]$/i) {
                                     my $problem_display_name = $event->{ "context" }->{ "module" }->{ "display_name" };
                                     my $event_event_source = $event->{ "event_source" };
 
+                                    # Need to remove quotes from old value before we can parse time.
+                                    my $latest_problem_time = $student_activity_data{ $event_user_id }{ $table_id }{ "time" };
+                                    $latest_problem_time =~ s/"//g;
+
                                     # Pre-course survey answers
                                     if ($problem_display_name eq "Pre-course survey" && $event_event_source eq "server") {
-                                        if (!$student_activity_data{ $event_user_id }{ "pre_survey_answers" }{ "time" } ||
-                                            str2time($event_time) > str2time($student_activity_data{ $event_user_id }{ "pre_survey_answers" }{ "time" })) 
+                                        if (!$student_activity_data{ $event_user_id }{ "pre_survey_answers" }{ "time" } || str2time($event_time) > str2time($latest_problem_time)) 
                                         {
                                             $student_activity_data{ "pre_survey_answers_keys" }{ "time" } = 1;
                                             $student_activity_data{ $event_user_id }{ "pre_survey_answers" }{ "time" } = "\"" . $event_time . "\"";
@@ -325,8 +328,7 @@ if ($input =~ m/^[CEA]$/i) {
                                     
                                     # Post-course survey answers
                                     if ($problem_display_name eq "Post-survey" && $event_event_source eq "server") {
-                                        if (!$student_activity_data{ $event_user_id }{ "post_survey_answers" }{ "time" } ||
-                                            str2time($event_time) > str2time($student_activity_data{ $event_user_id }{ "post_survey_answers" }{ "time" })) 
+                                        if (!$student_activity_data{ $event_user_id }{ "post_survey_answers" }{ "time" } || str2time($event_time) > str2time($latest_problem_time)) 
                                         {
                                             $student_activity_data{ "post_survey_answers_keys" }{ "time" } = 1;
                                             $student_activity_data{ $event_user_id }{ "post_survey_answers" }{ "time" } = "\"" . $event_time . "\"";
@@ -360,8 +362,7 @@ if ($input =~ m/^[CEA]$/i) {
                                         my $problem_grade = $event->{ "event" }->{ "grade" };
                                         my $problem_max_grade = $event->{ "event" }->{ "max_grade" };
                                         
-                                        if (!$student_activity_data{ $event_user_id }{ $table_id }{ "time" } || 
-                                            str2time($event_time) > str2time($student_activity_data{ $event_user_id }{ $table_id }{ "time" })) 
+                                        if (!$student_activity_data{ $event_user_id }{ $table_id }{ "time" } || str2time($event_time) > str2time($latest_problem_time)) 
                                         {
                                             $problem_tables{ $table_id } = 1;
 
