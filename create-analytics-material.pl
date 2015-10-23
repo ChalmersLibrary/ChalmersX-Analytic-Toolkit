@@ -85,16 +85,14 @@ while (!($input =~ m/^[CEAX]$/i)) {
 }
 
 # Check if something exists with the same name as our destination directory.
-my $dest_dir = "$organization-$course_id-$course_run-" . time2str('%y%m%d', $start_date) . "-" . time2str('%y%m%d', $end_date) . "-" . time2str('%Y%m%d%H%M%S',time);
+my $dest_dir = "$organization-$course_id-$course_run-" . time2str("%y%m%d", $start_date) . "-" . time2str("%y%m%d", $end_date) . "-" . time2str("%Y%m%d%H%M%S",time);
 if (-d $dest_dir) {
     print "\nDirectory '$dest_dir' already exists. Exiting...\n";
     $input = "X";
-}
-elsif (-e $dest_dir) {
+} elsif (-e $dest_dir) {
     print "\nFile with the same name as the destination directory '$dest_dir' already exists. Exiting...\n";
     $input = "X";
 }
-
 
 my %event_database_meta = ();
 my %event_database = ();
@@ -106,10 +104,27 @@ my %table_file_streams = ();
 if ($input =~ m/^[CEA]$/i) {
     mkdir $dest_dir;
 
+    # Open log stream
+    open (my $info_fh, '>', "$dest_dir/info.txt") or die "Failed to open file '$filename' for writing.";
+
+    # Print some general information to log file
+    print $info_fh "================================================================================\n";
+    print $info_fh "=                Simple Analytics Material Creator for edX Data                =\n";
+    print $info_fh "================================================================================\n";
+    print $info_fh "\n";
+    print $info_fh " Organization:\t\t$organization\n";
+    print $info_fh " Course ID:\t\t$course_id\n";
+    print $info_fh " Course Run:\t\t$course_run\n";
+    print $info_fh " Data start date:\t" . time2str("%y-%m-%d", $start_date) . "\n";
+    print $info_fh " Data end date:\t\t" . time2str("%y%m%d", $end_date) . "\n";
+    print $info_fh "\n";
+
     my $dbh = DBI->connect("dbi:SQLite:dbname=$dest_dir/$organization-$course_id-$course_run-SAMCED.db","","") 
         or die "Failed to create db";
 
     if ($input =~ m/^[CA]$/i) { # Process course data
+        print $info_fh " Course data processed.\n";
+
         #Figure out which directory we should fetch our course data from
         my @course_data_dirs = grep { -d } glob $cwd . '/course-data/*';
         
@@ -130,6 +145,7 @@ if ($input =~ m/^[CEA]$/i) {
         my $second_input = <>;
         $second_input =~ s/\r?\n//;
         if ($second_input =~ m/^[Y]$/i) {
+            print $info_fh " Course snapshot:\t\t" . time2str("%Y-%m-%d", $course_snapshot_date) . "\n";
             my @course_data_files = grep { -f } glob $course_snapshot_dir . '/*';
             foreach (@course_data_files) {
                 # Copy to destination directory if file in whitelist.
@@ -252,11 +268,13 @@ if ($input =~ m/^[CEA]$/i) {
         } else {
             print "Then I can't process course data :(\n\n";
         }
-        
+
+        print $info_fh "\n";
         print "\n\n";
     }
     
     if ($input =~ m/^[EA]$/i) { # Process event data
+        print $info_fh " Event data processed.\n";
         # Process the event data and save aggregates and particularly interesting data in temporary variables.
         my %problem_tables = ();
         my $iter_year = (Time_to_Date($start_date))[0];
@@ -541,6 +559,8 @@ if ($input =~ m/^[CEA]$/i) {
                 insert_row_into_table($dbh, $table_id, $row_data);
             }
         }
+
+        print $info_fh "\n";
     }
     
     # Export the whole database as .csv files
