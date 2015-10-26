@@ -1,0 +1,18 @@
+================================================================================
+ Compare problem data from different places courseware_studentmodule
+================================================================================
+select count(*) from 
+	courseware_studentmodule 
+where 
+	module_id='i4x://ChalmersX/ChM001x/problem/2aaf510ffa3d410c837ec3abe428bac4' AND 
+	grade=20 ;
+
+select count(*) from problem_2aaf510ffa3d410c837ec3abe428bac4 where grade=20;
+
+select courseware_studentmodule.created from 
+courseware_studentmodule left outer join problem_2aaf510ffa3d410c837ec3abe428bac4 on 
+	courseware_studentmodule.student_id = problem_2aaf510ffa3d410c837ec3abe428bac4.user_id 
+where 
+	module_id='i4x://ChalmersX/ChM001x/problem/2aaf510ffa3d410c837ec3abe428bac4' AND 
+	courseware_studentmodule.grade=20 AND
+	problem_2aaf510ffa3d410c837ec3abe428bac4.grade is null;
