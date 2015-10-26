@@ -318,7 +318,7 @@ if ($input =~ m/^[CEA]$/i) {
                                     if ($problem_display_name eq "Pre-course survey" && $event_event_source eq "server") {
 
                                         # Need to remove quotes from old value before we can parse time.
-                                        my $latest_problem_time = $student_activity_data{ $event_user_id }{ $table_id }{ "time" };
+                                        my $latest_problem_time = $student_activity_data{ $event_user_id }{ "pre_survey_answers" }{ "time" };
                                         $latest_problem_time =~ s/"//g;
 
                                         if (!$student_activity_data{ $event_user_id }{ "pre_survey_answers" }{ "time" } || str2time($event_time) > str2time($latest_problem_time)) {
@@ -348,7 +348,7 @@ if ($input =~ m/^[CEA]$/i) {
                                     if ($problem_display_name eq "Post-survey" && $event_event_source eq "server") {
 
                                         # Need to remove quotes from old value before we can parse time.
-                                        my $latest_problem_time = $student_activity_data{ $event_user_id }{ $table_id }{ "time" };
+                                        my $latest_problem_time = $student_activity_data{ $event_user_id }{ "post_survey_answers" }{ "time" };
                                         $latest_problem_time =~ s/"//g;
 
                                         if (!$student_activity_data{ $event_user_id }{ "post_survey_answers" }{ "time" } || str2time($event_time) > str2time($latest_problem_time)) {
