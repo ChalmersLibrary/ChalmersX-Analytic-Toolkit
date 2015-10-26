@@ -5,7 +5,7 @@ select count(*) from
 	courseware_studentmodule 
 where 
 	module_id='i4x://ChalmersX/ChM001x/problem/2aaf510ffa3d410c837ec3abe428bac4' AND 
-	grade=20 ;
+	grade=20;
 
 select count(*) from problem_2aaf510ffa3d410c837ec3abe428bac4 where grade=20;
 
