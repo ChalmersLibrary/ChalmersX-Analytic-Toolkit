@@ -112,11 +112,11 @@ if ($input =~ m/^[CEA]$/i) {
     print $info_fh "=                Simple Analytics Material Creator for edX Data                =\n";
     print $info_fh "================================================================================\n";
     print $info_fh "\n";
-    print $info_fh " Organization:\t\t$organization\n";
-    print $info_fh " Course ID:\t\t$course_id\n";
-    print $info_fh " Course Run:\t\t$course_run\n";
-    print $info_fh " Data start date:\t" . time2str("%y-%m-%d", $start_date) . "\n";
-    print $info_fh " Data end date:\t\t" . time2str("%y%m%d", $end_date) . "\n";
+    print $info_fh " Organization:\t\t\t\t$organization\n";
+    print $info_fh " Course ID:\t\t\t\t$course_id\n";
+    print $info_fh " Course Run:\t\t\t\t$course_run\n";
+    print $info_fh " Data start date:\t\t\t" . time2str("%Y-%m-%d", $start_date) . "\n";
+    print $info_fh " Data end date:\t\t\t\t" . time2str("%Y-%m-%d", $end_date) . "\n";
     print $info_fh "\n";
 
     my $dbh = DBI->connect("dbi:SQLite:dbname=$dest_dir/$organization-$course_id-$course_run-SAMCED.db","","") 
@@ -145,7 +145,7 @@ if ($input =~ m/^[CEA]$/i) {
         my $second_input = <>;
         $second_input =~ s/\r?\n//;
         if ($second_input =~ m/^[Y]$/i) {
-            print $info_fh " Course snapshot:\t\t" . time2str("%Y-%m-%d", $course_snapshot_date) . "\n";
+            print $info_fh " Course snapshot:\t\t\t" . time2str("%Y-%m-%d", $course_snapshot_date) . "\n";
             my @course_data_files = grep { -f } glob $course_snapshot_dir . '/*';
             foreach (@course_data_files) {
                 # Copy to destination directory if file in whitelist.
