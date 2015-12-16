@@ -3,12 +3,14 @@ This is a collection of scripts, most of them written in Perl, which are used to
 
 Be warned that the scripts are rather rough and in need of some refactorization. The SAMCED tables are created in multiple different ways now. In the future they should be rewritten so that they all are created using the same technique.
 
+The Perl scripts have some dependencies which will give errors, if missing, when you run them. Just install these dependencies and run the script again to solve it. The name of the dependencies should be given in the error message.
+
 ##The Scripts
 ###sync-edx-data.bat
-Fetches data from Amazon Simple Storage Service where edX are hosting the data. Also places a copy on another drive.
+Fetches data from Amazon Simple Storage Service where edX are hosting the data. Also backups the current folder to a given location. Takes the organization as first argument and the backup location as second argument from the command line.
 
 ###create-analytics-material.pl
-Takes organization, course id, course run and a timespan as input; processes the latest course data and all the event data for that timespan; and finally tries to output all the data that are needed for a researcher to be able to investigate a specific course. It expects the data to be present in the same directory as the script in the following hierarchy.
+Takes organization, course id, course run and a timespan as input, not from the command line; processes the latest course data and all the event data for that timespan; and finally tries to output all the data that are needed for a researcher to be able to investigate a specific course. It expects the data to be present in the same directory as the script, in the following hierarchy.
 
     course-data
         |-- chalmersx-2015-08-23
@@ -19,7 +21,7 @@ Takes organization, course id, course run and a timespan as input; processes the
              |-- events
                    |-- 2015
 
-The course data should be unpacked and decrypted. The event data should only be decrypted. Currently only fetches data from the edx folder.
+The course data should be unpacked and decrypted. The event data should only be decrypted. Currently only fetches event data from the edx folder.
 
 The script produces an output directory with many files, most of them are described below.
  
@@ -29,7 +31,7 @@ The script produces an output directory with many files, most of them are descri
    Data files that are simply copied from the course-data folder.
  * **[organization]-[course id]-[course run]-SAMCED.db**
    SAMCED stands for Simple Analytics Material Creator for edX Data and is a SQLite database containing tables imported straight from the .sql files and also tables with aggregated data compiled mainly from the event data.
- * SAMCED-[table name].csv
+ * **SAMCED-[table name].csv**
    All the tables in the SAMCED SQLite database exported as CSV files for easier processing with other tools and programs.
 
 ###create-improved-email-opt-in-data.pl
