@@ -1,59 +1,85 @@
-================================================================================
-=                Simple Analytics Material Creator for edX Data                =
-================================================================================
+#ChalmersX Analytic Toolkit
+This is a collection of scripts, most of them written in Perl, which are used to fetch collected data from edX courses and prepare it for use in internal research and communication. The main idea is for an edX data czar to be able to easily extract data for a specific course from the great big pile of data that all the courses make up. The script also does some minimal anonymization of the data together with some basic aggregation from the big semi-structured event data.
 
-1. The SAMCED SQLite database contains all the data in the following tables.
+Be warned that the scripts are rather rough and in need of some refactorization. The SAMCED tables are created in multiple different ways now. In the future they should be rewritten so that they all are created using the same technique.
 
-    Standard edX tables
-    ------------------------------------------------------------------------
-    + auth_userprofile
-    + certificates_generatedcertificate
-    + courseware_studentmodule
-    + student_courseenrollment
-    + student_languageproficiency
-    + user_api_usercoursetag
-    + user_id_map
-    + wiki_article
-    + wiki_articlerevision
+##The Scripts
+###sync-edx-data.bat
+Fetches data from Amazon Simple Storage Service where edX are hosting the data. Also places a copy on another drive.
+
+###create-analytics-material.pl
+Takes organization, course id, course run and a timespan as input; processes the latest course data and all the event data for that timespan; and finally tries to output all the data that are needed for a researcher to be able to investigate a specific course. It expects the data to be present in the same directory as the script in the following hierarchy.
+
+    course-data
+        |-- chalmersx-2015-08-23
+        |-- chalmersx-2015-08-30
+    edx-course-data
+        |-- edge
+        |-- edx
+             |-- events
+                   |-- 2015
+
+The course data should be unpacked and decrypted. The event data should only be decrypted. Currently only fetches data from the edx folder.
+
+The script produces an output directory with many files, most of them are described below.
+ 
+ * **info.txt**
+   Information about the script run.
+ * **[organization]-[course id]-[course run]-[sql table name].[sql|xml.tar.gz|json]**
+   Data files that are simply copied from the course-data folder.
+ * **[organization]-[course id]-[course run]-SAMCED.db**
+   SAMCED stands for Simple Analytics Material Creator for edX Data and is a SQLite database containing tables imported straight from the .sql files and also tables with aggregated data compiled mainly from the event data.
+ * SAMCED-[table name].csv
+   All the tables in the SAMCED SQLite database exported as CSV files for easier processing with other tools and programs.
+
+###create-improved-email-opt-in-data.pl
+Exports a CSV file with mail, name, gender, year of birth and country for all the students which have chosen the opt in alternative in a given course.
+
+###get-events-for-user.pl
+Currently gets all the video events for a specific user and prints them to a CSV file. This script is mostly used to check up on weird inconsistent data that have been encountered in the SAMCED aggregates.
+
+##The SAMCED Data
+The SAMCED SQLite database contains all the data in the following tables.
+
+###Standard edX Tables
+  * auth_userprofile
+  * certificates_generatedcertificate
+  * courseware_studentmodule
+  * student_courseenrollment
+  * student_languageproficiency
+  * user_api_usercoursetag
+  * wiki_article
+  * wiki_articlerevision
   
-    Non-standard tables
-    ------------------------------------------------------------------------
-    + discussion_forum_activity
+###Non-standard Tables
+  * discussion_forum_activity
         One row for each user, representing that users usage of the 
         discussion forum.
-    + discussion_forum_activity_ng
+  * discussion_forum_activity_ng
         One row for each post with id, poster, thread and response_to.
-    + pre_survey_answers
+  * pre_survey_answers
         One row for each user, representing that users answers on the pre
         survey questionnaire.
-    + post_survey_answers
+  * post_survey_answers
         One row for each user, representing that users answers on the post
         survey questionnaire.
-    + video_activity
+  * video_activity
         One row for each user, representing that users interaction with
         the courses video material.
-    + video_activity_ng
+  * video_activity_ng
         One row for each unique combination of user and video interaction.
-    + pre_roll_video_activity
+  * pre_roll_video_activity
         One row for each user, representing that users interaction with
         pre roll videos.
-    + problem_activity
+  * problem_activity
         One row for each user, representing that users interaction with the
         courses problems.
-    + problem_<edx_problem_id>
+  * problem_<edx_problem_id>
         One table for each problem. One row for each user with some data 
         about that users interaction with that specific problem.
-    + textbook_activity
+  * textbook_activity
         One row for each user, representing that users interaction with
         the textbooks in the course.
-    + page_activity_xxx
+  * page_activity_xxx
         One row for each user and one column for each day, containing the 
         number of times that user accessed the page xxx.
-        
-2. Tips and tricks
-Save a sqlite table to a CSV file.
-    1. sqlite> .mode csv
-    2. sqlite> .output test.csv
-    3. sqlite> .schema tbl1
-    4. sqlite> select * from tbl1;
-    5. sqlite> .output stdout
