@@ -17,7 +17,7 @@ my $csv = Text::CSV->new ( { binary => 1 } )
      or die "Cannot use CSV: ".Text::CSV->error_diag ();
 
 print "Please enter organization.\n> ";
-my $organization = "ChalmersX"; #<>;
+my $organization = <>;
 chomp $organization;
 print "Thank you!\n\n";
 
@@ -70,8 +70,8 @@ if ($second_input =~ m/^[Y]$/i) {
     }
 
     # Load the email_opt_data, merge with some of the preloaded data and save it in a new CSV-file.
-    open(my $fh, '<:encoding(UTF-8)', "$course_snapshot_dir/chalmersx-email_opt_in-prod-analytics.csv")
-        or die "Could not open file '$course_snapshot_dir/chalmersx-email_opt_in-prod-analytics.csv' $!\n";
+    open(my $fh, '<:encoding(UTF-8)', "$course_snapshot_dir/$organization-email_opt_in-prod-analytics.csv")
+        or die "Could not open file '$course_snapshot_dir/$organization-email_opt_in-prod-analytics.csv' $!\n";
         
     open(my $output_fh, '>:encoding(UTF-8)', "email_opt_in.csv") or die "Could not open file 'email_opt_in.csv' $!";
     
