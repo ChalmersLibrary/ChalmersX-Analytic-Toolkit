@@ -1,7 +1,7 @@
 #ChalmersX Analytic Toolkit
-This is a collection of scripts, most of them written in Perl, which are used to fetch collected data from edX courses and prepare it for use in internal research and communication. The main idea is for an edX data czar to be able to easily extract data for a specific course from the great big pile of data that all the courses make up. The script also does some minimal anonymization of the data together with some basic aggregation from the big semi-structured event data.
+This is a collection of scripts, most of them written in Perl, which are used to fetch data from edX courses and prepare it for use in internal research and communication. The main idea is for an edX data czar to be able to easily extract data for a specific course from the great big pile of data that all the courses make up. The script also does some minimal anonymization of the data together with some basic aggregation from the big semi-structured event data.
 
-Be warned that the scripts are rather rough and in need of some refactorization. The SAMCED tables are created in multiple different ways now. In the future they should be rewritten so that they all are created using the same technique.
+Be warned that the scripts are rather rough and in need of some refactorization. The SAMCED tables are created in multiple different ways now. In the future they should be rewritten so that they all are created using the same technique. The scripts have only been run on one organization and just a couple of courses so far, which means that they haven't been tested extensively yet.
 
 The Perl scripts have some dependencies which will give errors if missing when you run them. Just install these dependencies and run the script again to solve it. The name of the dependencies should be given in the error message.
 
