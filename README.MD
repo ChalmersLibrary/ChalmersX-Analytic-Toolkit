@@ -6,11 +6,7 @@ Be warned that the scripts are rather rough and in need of some refactorization.
 The Perl scripts have some dependencies which will give errors if missing when you run them. Just install these dependencies and run the script again to solve it. The name of the dependencies should be given in the error message.
 
 ##The Scripts
-###sync-edx-data.bat
-Fetches data from Amazon Simple Storage Service where edX are hosting the data. Also backups the current folder to a given location. Takes the organization as first argument and the backup location as second argument from the command line. Need to have configured the S3 buckets and authenticated before running this script.
-
-###create-analytics-material.pl
-Takes organization, course id, course run and a timespan as input, not from the command line; processes the latest course data and all the event data for that timespan; and finally tries to output all the data that are needed for a researcher to be able to investigate a specific course. It expects the data to be present in the same directory as the script, in the following hierarchy.
+The scripts expects the data to be present in the same directory as the script, in the following hierarchy.
 
     course-data
         |-- chalmersx-2015-08-23
@@ -21,9 +17,13 @@ Takes organization, course id, course run and a timespan as input, not from the 
              |-- events
                    |-- 2015
 
-The course data should be unpacked and decrypted. The event data should only be decrypted. Currently only fetches event data from the edx folder.
+The sync-edx-data.bat script below fetches the data with this hierarchy. The course data should be unpacked and decrypted. The event data should only be decrypted.
 
-The script produces an output directory with many files, most of them are described below.
+###sync-edx-data.bat
+Fetches data from Amazon Simple Storage Service where edX are hosting the data. Also backups the current folder to a given location. Takes the organization as first argument and the backup location as second argument from the command line. Need to have configured the S3 buckets and authenticated before running this script.
+
+###create-analytics-material.pl
+Takes organization, course id, course run and a timespan as input, not from the command line; processes the latest course data and all the event data for that timespan; and finally tries to output all the data that are needed for a researcher to be able to investigate a specific course. Currently only fetches event data from the edx folder. The script produces an output directory with many files, most of them are described below.
  
  * **info.txt**
    Information about the script run.
