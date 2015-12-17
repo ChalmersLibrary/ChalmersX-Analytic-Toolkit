@@ -25,14 +25,10 @@ Fetches data from Amazon Simple Storage Service where edX are hosting the data. 
 ###create-analytics-material.pl
 Takes organization, course id, course run and a timespan as input, not from the command line; processes the latest course data and all the event data for that timespan; and finally tries to output all the data that are needed for a researcher to be able to investigate a specific course. Currently only fetches event data from the edx folder. The script produces an output directory with many files, most of them are described below.
  
- * **info.txt**
-   Information about the script run.
- * **[organization]-[course id]-[course run]-[table name or equivalent].[sql|xml.tar.gz|json]**
-   Data files that are simply copied from the course-data folder.
- * **[organization]-[course id]-[course run]-SAMCED.db**
-   SAMCED stands for Simple Analytics Material Creator for edX Data and is an SQLite database containing tables imported straight from the .sql files and also tables with aggregated data compiled mainly from the event data.
- * **SAMCED-[table name].csv**
-   All the tables in the SAMCED SQLite database exported as CSV files for easier processing with other tools and programs.
+ * **info.txt**: Information about the script run.
+ * **[organization]-[course id]-[course run]-[table name or equivalent].[sql|xml.tar.gz|json]**: Data files that are simply copied from the course-data folder.
+ * **[organization]-[course id]-[course run]-SAMCED.db**: SAMCED stands for Simple Analytics Material Creator for edX Data and is an SQLite database containing tables imported straight from the .sql files and also tables with aggregated data compiled mainly from the event data.
+ * **SAMCED-[table name].csv**: All the tables in the SAMCED SQLite database exported as CSV files for easier processing with other tools and programs.
 
 ###create-improved-email-opt-in-data.pl
 Exports a CSV file with mail, name, gender, year of birth and country for all the students which have chosen the opt in alternative in a given course.
@@ -54,34 +50,14 @@ The SAMCED SQLite database contains the following tables.
   * wiki_articlerevision
   
 ###Non-standard Tables
-  * discussion_forum_activity
-        One row for each user, representing that users usage of the 
-        discussion forum.
-  * discussion_forum_activity_ng
-        One row for each post with id, poster, thread and response_to.
-  * pre_survey_answers
-        One row for each user, representing that users answers on the pre
-        survey questionnaire. Requires the pre survey to have been a problem with specific display name.
-  * post_survey_answers
-        One row for each user, representing that users answers on the post
-        survey questionnaire. Required the post survey to have been a problem with specific display name.
-  * video_activity
-        One row for each user, representing that users interaction with
-        the courses video material.
-  * video_activity_ng
-        One row for each unique combination of user and video interaction.
-  * pre_roll_video_activity
-        One row for each user, representing that users interaction with
-        pre roll videos.
-  * problem_activity
-        One row for each user, representing that users interaction with the
-        courses problems.
-  * problem_<edx_problem_id>
-        One table for each problem. One row for each user with some data 
-        about that users interaction with that specific problem.
-  * textbook_activity
-        One row for each user, representing that users interaction with
-        the textbooks in the course.
-  * page_activity_xxx
-        One row for each user and one column for each day, containing the 
-        number of times that user accessed the page xxx.
+  * discussion_forum_activity: One row for each user, representing that users usage of the discussion forum.
+  * discussion_forum_activity_ng: One row for each post with id, poster, thread and response_to.
+  * pre_survey_answers: One row for each user, representing that users answers on the pre survey questionnaire. Requires the pre survey to have been a problem with specific display name.
+  * post_survey_answers: One row for each user, representing that users answers on the post survey questionnaire. Required the post survey to have been a problem with specific display name.
+  * video_activity: One row for each user, representing that users interaction with the courses video material.
+  * video_activity_ng: One row for each unique combination of user and video interaction.
+  * pre_roll_video_activity: One row for each user, representing that users interaction with pre roll videos.
+  * problem_activity: One row for each user, representing that users interaction with the courses problems.
+  * problem_<edx_problem_id>: One table for each problem. One row for each user with some data about that users interaction with that specific problem.
+  * textbook_activity: One row for each user, representing that users interaction with the textbooks in the course.
+  * page_activity_xxx: One row for each user and one column for each day, containing the number of times that user accessed the page xxx.
