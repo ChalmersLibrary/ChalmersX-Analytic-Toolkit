@@ -3,11 +3,11 @@ This is a collection of scripts, most of them written in Perl, which are used to
 
 Be warned that the scripts are rather rough and in need of some refactorization. The SAMCED tables are created in multiple different ways now. In the future they should be rewritten so that they all are created using the same technique.
 
-The Perl scripts have some dependencies which will give errors, if missing, when you run them. Just install these dependencies and run the script again to solve it. The name of the dependencies should be given in the error message.
+The Perl scripts have some dependencies which will give errors if missing when you run them. Just install these dependencies and run the script again to solve it. The name of the dependencies should be given in the error message.
 
 ##The Scripts
 ###sync-edx-data.bat
-Fetches data from Amazon Simple Storage Service where edX are hosting the data. Also backups the current folder to a given location. Takes the organization as first argument and the backup location as second argument from the command line.
+Fetches data from Amazon Simple Storage Service where edX are hosting the data. Also backups the current folder to a given location. Takes the organization as first argument and the backup location as second argument from the command line. Need to have configured the S3 buckets and authenticated before running this script.
 
 ###create-analytics-material.pl
 Takes organization, course id, course run and a timespan as input, not from the command line; processes the latest course data and all the event data for that timespan; and finally tries to output all the data that are needed for a researcher to be able to investigate a specific course. It expects the data to be present in the same directory as the script, in the following hierarchy.
@@ -27,10 +27,10 @@ The script produces an output directory with many files, most of them are descri
  
  * **info.txt**
    Information about the script run.
- * **[organization]-[course id]-[course run]-[sql table name].[sql|xml.tar.gz|json]**
+ * **[organization]-[course id]-[course run]-[table name or equivalent].[sql|xml.tar.gz|json]**
    Data files that are simply copied from the course-data folder.
  * **[organization]-[course id]-[course run]-SAMCED.db**
-   SAMCED stands for Simple Analytics Material Creator for edX Data and is a SQLite database containing tables imported straight from the .sql files and also tables with aggregated data compiled mainly from the event data.
+   SAMCED stands for Simple Analytics Material Creator for edX Data and is an SQLite database containing tables imported straight from the .sql files and also tables with aggregated data compiled mainly from the event data.
  * **SAMCED-[table name].csv**
    All the tables in the SAMCED SQLite database exported as CSV files for easier processing with other tools and programs.
 
@@ -41,7 +41,7 @@ Exports a CSV file with mail, name, gender, year of birth and country for all th
 Currently gets all the video events for a specific user and prints them to a CSV file. This script is mostly used to check up on weird inconsistent data that have been encountered in the SAMCED aggregates.
 
 ##The SAMCED Data
-The SAMCED SQLite database contains all the data in the following tables.
+The SAMCED SQLite database contains the following tables.
 
 ###Standard edX Tables
   * auth_userprofile
@@ -61,10 +61,10 @@ The SAMCED SQLite database contains all the data in the following tables.
         One row for each post with id, poster, thread and response_to.
   * pre_survey_answers
         One row for each user, representing that users answers on the pre
-        survey questionnaire.
+        survey questionnaire. Requires the pre survey to have been a problem with specific display name.
   * post_survey_answers
         One row for each user, representing that users answers on the post
-        survey questionnaire.
+        survey questionnaire. Required the post survey to have been a problem with specific display name.
   * video_activity
         One row for each user, representing that users interaction with
         the courses video material.
