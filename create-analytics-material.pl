@@ -2,6 +2,17 @@
 #use strict;
 #use warnings;
 
+use DBI;
+use IO::Zlib;
+use Date::Parse;
+use Date::Format;
+use Date::Calc      qw( Delta_Days Time_to_Date Add_Delta_Days );
+use Cwd             qw( abs_path );
+use File::Basename  qw( dirname );
+use JSON::XS;
+use File::Copy;
+use DateTime;
+
 my %file_whitelist = ( "course_structure-prod-analytics.json"           => "OK",
                     "course-prod-analytics.xml.tar.gz"                  => "OK",
                     "courseware_studentmodule-prod-analytics.sql"       => "OK",
@@ -25,17 +36,6 @@ my @auth_userprofile_allowed_rows = (1, 1, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1
 
 # id, user_id, download_url, grade, course_id, key, distinction, status, verify_uuid, download_uuid, name, created_date, modified_date, error_reason, mode
 my @certificates_generatedcertificate_allowed_rows = (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1);
-
-use DBI;
-use IO::Zlib;
-use Date::Parse;
-use Date::Format;
-use Date::Calc      qw( Delta_Days Time_to_Date Add_Delta_Days );
-use Cwd             qw( abs_path );
-use File::Basename  qw( dirname );
-use JSON::XS;
-use File::Copy;
-use DateTime;
 
 # Auto flush the default buffer.
 $| = 1;
