@@ -10,6 +10,7 @@ use Cwd             qw( abs_path );
 use File::Basename  qw( dirname );
 use File::Copy;
 use DateTime;
+use JSON::XS;
 
 my %course_file_whitelist = ( "course_structure-prod-analytics.json"                => "OK",
                               "course-prod-analytics.xml.tar.gz"                    => "OK",
@@ -187,7 +188,17 @@ if ($input =~ m/^[CEFA]$/i) {
                         my $events_not_belonging_to_course = 0;
                         while (my $row = <$gzfh>) {
                             chomp $row;
-                            print $gzwfh "$row\n";
+                            
+                            my $event = JSON::XS->new->utf8->decode($row);
+                            
+                            my $event_course_id = $event->{ "context" }->{ "course_id" };
+                            
+                            if (index($event_course_id, $organization) != -1 && index($event_course_id, $course_id) != -1 && index($event_course_id, $course_run) != -1) {
+                                print $gzwfh "$row\n";
+                                $events_belonging_to_course++;
+                            } else {
+                                $events_not_belonging_to_course++;
+                            }
                         }
                         
                         $gzwfh->close();
