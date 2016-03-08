@@ -71,20 +71,24 @@ if (-d $dest_dir) {
                 }
                 my $event_source = $event->{ "event_source" };
             
+                if (not defined $event_user_id) {
+                    $event_user_id = "undefined";
+                }
+
                 # Video interaction events.
-                if ($event_event_type eq "hide_transcript" || $event_event_type eq "load_video" || $event_event_type eq "pause_video" || 
+                if ($event_event_type eq "hide_transcript" || $event_event_type eq "load_video" || $event_event_type eq "pause_video" ||
                     $event_event_type eq "play_video" || $event_event_type eq "seek_video" || $event_event_type eq "show_transcript" ||
                     $event_event_type eq "speed_change_video" || $event_event_type eq "stop_video" || $event_event_type eq "video_hide_cc_menu" ||
                     $event_event_type eq "video_show_cc_menu")
                 {
                     $student_activity_video_keys{ $event_event_type } = 1;
                     $student_activity_video_data{ $event_user_id }{ $event_event_type }++;
-                    
-                    my $video_event_event = $event->{ "event" };                               
+
+                    my $video_event_event = $event->{ "event" };
                     if ($video_event_event && ref($video_event_event) ne "HASH") {
                         $video_event_event = JSON::XS->new->utf8->decode($video_event_event);
                     }
-                    
+
                     $student_activity_video_ng_keys{ $event_event_type } = 1;
                     $student_activity_video_ng_data{ $event_user_id . ":" . $video_event_event->{ "id" } }{ "user_id" } = $event_user_id;
                     $student_activity_video_ng_data{ $event_user_id . ":" . $video_event_event->{ "id" } }{ "video_event_id" } = $video_event_event->{ "id" };
