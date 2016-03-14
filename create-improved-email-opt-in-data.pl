@@ -77,13 +77,18 @@ if ($second_input =~ m/^[Y]$/i) {
     
     print $output_fh "mail, name, gender, year_of_birth, country\n";
     
+    my %added_emails = ();
     while (my $row = $csv->getline( $fh )) {
         if ($row->[3] eq "True") {
             my $user_email = $row->[0];
             my @auth_user = @{ $auth_user_data{ $user_email } };
             my @auth_userprofile = @{ $auth_userprofile_data{ $auth_user[0] } };
             
-            print $output_fh "$user_email, " . $auth_userprofile[2] . ", " . $auth_userprofile[7] . ", " . $auth_userprofile[9] . ", " . $auth_userprofile[13] . "\n";
+            # Remove duplicates
+            if (not exists $added_emails{ $user_email }) {
+                $added_emails{ $user_email } = 1;
+                print $output_fh "$user_email, " . $auth_userprofile[2] . ", " . $auth_userprofile[7] . ", " . $auth_userprofile[9] . ", " . $auth_userprofile[13] . "\n";
+            }
         }
     }
 }
