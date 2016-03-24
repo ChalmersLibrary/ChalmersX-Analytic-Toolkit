@@ -93,7 +93,8 @@ if ($input =~ m/^[Y]$/i) {
                         my $event = JSON::XS->new->utf8->decode($row);
                         
                         my $event_event_type = $event->{ "event_type" };
-                        
+                        my $event_course_id = $event->{ "context" }->{ "course_id" };
+
                         if (index($event_course_id, $organization) != -1 && index($event_course_id, $course_id) != -1 && index($event_course_id, $course_run) != -1) {
                             if ($event->{ "context" }->{ "user_id" } == $user_id) {
                                 # Video interaction events.
