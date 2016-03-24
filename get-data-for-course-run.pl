@@ -23,6 +23,9 @@ my %course_file_whitelist = ( "course_structure-prod-analytics.json"            
 
 my %forum_file_whitelist =  ( "prod.mongo"                                          => "OK" );
 
+my %table_whitelist = ( "auth_userprofile"                   => "OK",
+                        "certificates_generatedcertificate"  => "OK");
+
 
 
 # id, user_id, name, language, location, meta, courseware, gender, mailing_address, year_of_birth, level_of_education, goals, allow_certificate, country, city, bio, profile_image_uploaded_at
@@ -73,7 +76,7 @@ while (!($input =~ m/^[CEFAX]$/i)) {
     print " (C/E/F/A/X)\n> ";
     $input = <>;
     $input =~ s/\r?\n//;
-    
+
     if ($input =~ m/^[^CEFAX]?$/i) {
         print "\nUnknown command, please enter a letter from the table above.\n\n";
     }
@@ -107,7 +110,7 @@ if ($input =~ m/^[CEFA]$/i) {
     print $info_fh " Data start date:\t\t\t" . time2str("%Y-%m-%d", $start_date) . "\n";
     print $info_fh " Data end date:\t\t\t\t" . time2str("%Y-%m-%d", $end_date) . "\n";
     print $info_fh "\n";
-    
+
     # Process course data and/or forum data
     if ($input =~ m/^[CFA]$/i) {
         if ($input =~ m/^[CA]$/i) {
@@ -116,10 +119,10 @@ if ($input =~ m/^[CEFA]$/i) {
 
         #Figure out which directory we should fetch our course data from
         my @course_data_dirs = grep { -d } glob $cwd . '/course-data/*';
-        
+
         my $course_snapshot_dir = "";
         my $course_snapshot_date = undef;
-        
+
         foreach (@course_data_dirs) {
             if (/(\d{4}-\d{2}-\d{2})$/) {
                 my $potential_new_course_snapshot_date = str2time($1);
@@ -130,11 +133,11 @@ if ($input =~ m/^[CEFA]$/i) {
                 }
             }
         }
-        
+
         if ($input =~ m/^[FA]$/i) {
             print $info_fh " Forum data processed.\n";
         }
-        
+
         print "\nWill fetch data from course snapshot in the following directory.\n$course_snapshot_dir.\n\nIs this correct? (Y/N)\n";
         my $second_input = <>;
         $second_input =~ s/\r?\n//;
@@ -147,7 +150,59 @@ if ($input =~ m/^[CEFA]$/i) {
                     my $course_data_filename = $1;
                     if (($input =~ m/^[CA]$/i && $course_file_whitelist{$course_data_filename}) ||
                         ($input =~ m/^[FA]$/i && $forum_file_whitelist{$course_data_filename})) {
+                        print "\nCopying '$course_data_filename'.";
                         copy($_, $dest_dir);
+                    }
+                }
+
+                # Special handling of auth_userprofile and certificates_generatedcertificate
+                if (/$organization-$course_id-$course_run-(.*)-prod-analytics\.sql$/) {
+                    if ($table_whitelist{ $1 }) {
+                        # Create CSV files from the data and filter out some stuff.
+                        print "\nCopying data for '$1' to csv file.";
+                        open(my $fh, '<:encoding(UTF-8)', $_)
+                            or die "Could not open file '$_' $!\n";
+                        open(my $fh_csv, '>:encoding(UTF-8)', "$dest_dir/$1.csv")
+                            or die "Could not open file '$_' $!\n";
+
+                        my $line_count = 0;
+                        my $col_count = 0;
+                        while (my $row = <$fh>) {
+                            chomp $row;
+
+                            if ($line_count == 0) {
+                                # First row of the sql file, time to create a table to hold the data.
+                                my $first_line = "";
+                                my @column_names = split(/\t/, $row);
+                                $col_count = 0;
+                                foreach (@column_names) {
+                                    if (is_column_allowed($1, $col_count)) {
+                                        $first_line .= "$_,";
+                                    }
+                                    $col_count++;
+                                }
+                                chop($first_line);
+                                print $fh_csv "$first_line\n";
+                            } else {
+                                # Time to insert the data into our newly created table.
+                                my $not_first_line = "";
+                                my @column_data = split(/\t/, $row);
+                                $col_count = 0;
+                                foreach (@column_data) {
+                                    if (is_column_allowed($1, $col_count)) {
+                                        my $fixed_data = $_;
+                                        $fixed_data =~ tr/"/'/;
+                                        $fixed_data =~ tr/\r?\n/ /;
+                                        $not_first_line .= "\"$fixed_data\",";
+                                    }
+                                    $col_count++;
+                                }
+                                chop($not_first_line);
+                                print $fh_csv "$not_first_line\n";
+                            }
+
+                            $line_count++;
+                        }
                     }
                 }
             }
@@ -158,7 +213,7 @@ if ($input =~ m/^[CEFA]$/i) {
         print $info_fh "\n";
         print "\n\n";
     }
-    
+
     # Process event data
     if ($input =~ m/^[EA]$/i) {
         print $info_fh " Event data processed.\n";
@@ -171,28 +226,28 @@ if ($input =~ m/^[CEFA]$/i) {
             foreach (@course_event_data_files) {
                 if (/.*([0-9]{4}-[0-9]{2}-[0-9]{2})\.log\.gz$/) {
                     my $event_date = str2time($1);
-                    
+
                     if ($event_date >= $start_date && $event_date <= $end_date) {
                         print "Processing event file for date $1...\n";
-                        
+
                         my $filename = "$dest_dir/events/$1.log.gz";
                         my $gzwfh = new IO::Zlib;
                         $gzwfh->open($filename, "wb")
                             or die "Could not open file '$filename' $!\n";
-                        
+
                         my $gzfh = new IO::Zlib;
                         $gzfh->open($_, "rb")
                             or die "Could not open file '$_' $!\n";
-                      
+
                         my $events_belonging_to_course = 0;
                         my $events_not_belonging_to_course = 0;
                         while (my $row = <$gzfh>) {
                             chomp $row;
-                            
+
                             my $event = JSON::XS->new->utf8->decode($row);
-                            
+
                             my $event_course_id = $event->{ "context" }->{ "course_id" };
-                            
+
                             if (index($event_course_id, $organization) != -1 && index($event_course_id, $course_id) != -1 && index($event_course_id, $course_run) != -1) {
                                 print $gzwfh "$row\n";
                                 $events_belonging_to_course++;
@@ -200,9 +255,9 @@ if ($input =~ m/^[CEFA]$/i) {
                                 $events_not_belonging_to_course++;
                             }
                         }
-                        
+
                         $gzwfh->close();
-                        
+
                         print "Found $events_belonging_to_course events that belongs to course.\nDiscarded $events_not_belonging_to_course events that does not belong to this course.\n\n";
                         $gzfh->close();
                     }
@@ -213,27 +268,39 @@ if ($input =~ m/^[CEFA]$/i) {
 
         print $info_fh "\n";
     }
-    
+
     close $info_fh;
 }
 
 sub is_better_snapshot_date {
     my ($current_date, $potential_date, $goal_date) = @_;
     my $res = 0;
-    
+
     if (!defined($current_date)) {
         $res = 1;
     } else {
         my $cd_gd_delta = $goal_date - $current_date; #Delta_Days($current_date, $goal_date);
         my $cd_pd_delta = $potential_date - $current_date; #Delta_Days($current_date, $potential_date);
         my $pd_gd_delta = $goal_date - $potential_date; #Delta_Days($potential_date, $goal_date);
-        
+
         if ($cd_gd_delta > 0) { # current date is smaller than goal date
             $res = $cd_pd_delta > 0 || abs($pd_gd_delta) < abs($cd_gd_delta);
         } elsif ($cd_gd_delta < 0) { # current date is larger than goal date
             $res = abs($pd_gd_delta) < abs($cd_gd_delta);
         }
     }
-    
+
     return $res;
+}
+
+sub is_column_allowed {
+    my ($table_name, $column_index) = @_;
+
+    if ($table_name eq "auth_userprofile") {
+        return $auth_userprofile_allowed_rows[$column_index];
+    } elsif ($table_name eq "certificates_generatedcertificate") {
+        return $certificates_generatedcertificate_allowed_rows[$column_index];
+    } else {
+        return 1;
+    }
 }

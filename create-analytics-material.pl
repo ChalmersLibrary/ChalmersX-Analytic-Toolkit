@@ -21,7 +21,7 @@ my %file_whitelist = ( "course_structure-prod-analytics.json"           => "OK",
                     "user_api_usercoursetag-prod-analytics.sql"         => "OK",
                     "wiki_article-prod-analytics.sql"                   => "OK",
                     "wiki_articlerevision-prod-analytics.sql"           => "OK" );
-                    
+
 my %table_whitelist = ("auth_userprofile"               => "OK",
                     "courseware_studentmodule"          => "OK",
                     "student_courseenrollment"          => "OK",
@@ -78,7 +78,7 @@ while (!($input =~ m/^[CEAX]$/i)) {
     print " (C/E/A/X)\n> ";
     $input = <>;
     $input =~ s/\r?\n//;
-    
+
     if ($input =~ m/^[^CEAX]?$/i) {
         print "\nUnknown command, please enter a letter from the table above.\n\n";
     }
@@ -119,7 +119,7 @@ if ($input =~ m/^[CEA]$/i) {
     print $info_fh " Data end date:\t\t\t\t" . time2str("%Y-%m-%d", $end_date) . "\n";
     print $info_fh "\n";
 
-    my $dbh = DBI->connect("dbi:SQLite:dbname=$dest_dir/$organization-$course_id-$course_run-SAMCED.db","","") 
+    my $dbh = DBI->connect("dbi:SQLite:dbname=$dest_dir/$organization-$course_id-$course_run-SAMCED.db","","")
         or die "Failed to create db";
 
     if ($input =~ m/^[CA]$/i) { # Process course data
@@ -127,10 +127,10 @@ if ($input =~ m/^[CEA]$/i) {
 
         #Figure out which directory we should fetch our course data from
         my @course_data_dirs = grep { -d } glob $cwd . '/course-data/*';
-        
+
         my $course_snapshot_dir = "";
         my $course_snapshot_date = undef;
-        
+
         foreach (@course_data_dirs) {
             if (/(\d{4}-\d{2}-\d{2})$/) {
                 my $potential_new_course_snapshot_date = str2time($1);
@@ -140,7 +140,7 @@ if ($input =~ m/^[CEA]$/i) {
                 }
             }
         }
-        
+
         print "\nWill fetch data from course snapshot in the following directory.\n$course_snapshot_dir.\n\nIs this correct? (Y/N)\n";
         my $second_input = <>;
         $second_input =~ s/\r?\n//;
@@ -154,19 +154,19 @@ if ($input =~ m/^[CEA]$/i) {
                         copy($_, $dest_dir);
                     }
                 }
-          
+
                 if (/$organization-$course_id-$course_run-(.*)-prod-analytics\.sql$/) {
                     if ($table_whitelist{ $1 }) {
                         # Create SQL tables from all SQL files.
                         print "\nStoring data for '$1' in database...  ";
                         open(my $fh, '<:encoding(UTF-8)', $_)
                             or die "Could not open file '$_' $!\n";
-                      
+
                         my $line_count = 0;
                         my $col_count = 0;
                         while (my $row = <$fh>) {
                             chomp $row;
-                            
+
                             if ($line_count == 0) {
                                 # First row of the sql file, time to create a table to hold the data.
                                 my $create_table_sql = "CREATE TABLE $1(";
@@ -182,7 +182,7 @@ if ($input =~ m/^[CEA]$/i) {
                                 $create_table_sql .= ");";
                                 exec_query($dbh, $create_table_sql);
                             }
-                            
+
                             # Time to insert the data into our newly created table.
                             my $insert_data_sql = "INSERT INTO $1 VALUES (";
                             my @column_data = split(/\t/, $row);
@@ -199,69 +199,69 @@ if ($input =~ m/^[CEA]$/i) {
                             chop($insert_data_sql);
                             $insert_data_sql .= ");";
                             exec_query($dbh, $insert_data_sql);
-                            
+
                             $line_count++;
                         }
                         print "Done.";
                     }
                 }
-               
+
                 if (/($organization-$course_id-$course_run-prod\.mongo)$/) {
                     # Process forum data
                     print "\nProcessing forum data from '$1'...  ";
                     open(my $fh, '<:bytes', $_)
                         or die "Could not open file '$_' $!\n";
-                        
+
                     my @forum_posts = ();
                     my %forum_message_id_mapping = ();
-                  
+
                     while (my $row = <$fh>) {
                         chomp $row;
                         my $forum_post = JSON::XS->new->utf8->decode($row);
                         my $user_id = $forum_post->{ 'author_id' };
                         my $forum_post_type = $forum_post->{ '_type' };
-                        
+
                         $student_activity_data{ "discussion_forum_activity_keys" }{ $forum_post_type } = 1;
-                        
+
                         $student_activity_data{ $user_id }{ "discussion_forum_activity" }{ $forum_post_type }++;
-                        
+
                         push @forum_posts, $forum_post;
                     }
-                    
+
                     # Build table with id, poster, thread and response-to.
                     my @forum_posts_ordered_by_created_asc = sort { $a->{ "created_at" }->{ '$date' } cmp $b->{ "created_at" }->{ '$date' } } @forum_posts;
-                    
+
                     create_table($dbh, "discussion_forum_activity_ng", {
                         "id" => "TEXT",
                         "poster" => "TEXT",
                         "thread" => "TEXT",
                         "response_to" => "TEXT"
                     });
-                    
+
                     my $line_count = 0;
                     foreach my $forum_post (@forum_posts_ordered_by_created_asc) {
                         my $fixed_post_id = $line_count + 1;
                         my $thread_id = $forum_post->{ "comment_thread_id" }->{ '$oid' };
                         $forum_message_id_mapping{ $forum_post->{ "_id" }->{ '$oid' } } = $fixed_post_id;
-                        
-                        insert_row_into_table($dbh, "discussion_forum_activity_ng", { 
+
+                        insert_row_into_table($dbh, "discussion_forum_activity_ng", {
                             "id" => "\"" . $fixed_post_id . "\"",
                             "poster" => "\"" . $forum_post->{ "author_id" } . "\"",
                             "thread" => "\"" . $forum_message_id_mapping{ $thread_id ? $thread_id : $forum_post->{ "_id" }->{ '$oid' } } . "\"",
                             "response_to" => "\"" . $forum_message_id_mapping{ $forum_post->{ "parent_id" }->{ '$oid' } } . "\""
                         });
-                            
+
                         $line_count++;
                     }
-                    
+
                     # Build old discussion forum table with aggregated data.
                     create_std_user_table_from_table_names_stored_as_keys($dbh, "discussion_forum_activity", "INTEGER", %{ $student_activity_data{ "discussion_forum_activity_keys" } });
-                    
+
                     keys %student_activity_data;
                     while (my($student_id, $activity_data) = each %student_activity_data) {
                         insert_student_activity_data_into_table($dbh, $student_id, $activity_data, "discussion_forum_activity");
                     }
-                    
+
                     print "Done.";
                 }
             }
@@ -272,7 +272,7 @@ if ($input =~ m/^[CEA]$/i) {
         print $info_fh "\n";
         print "\n\n";
     }
-    
+
     if ($input =~ m/^[EA]$/i) { # Process event data
         print $info_fh " Event data processed.\n";
         # Process the event data and save aggregates and particularly interesting data in temporary variables.
@@ -285,19 +285,19 @@ if ($input =~ m/^[CEA]$/i) {
             foreach (@course_event_data_files) {
                 if (/.*([0-9]{4}-[0-9]{2}-[0-9]{2})\.log\.gz$/) {
                     my $event_date = str2time($1);
-                    
+
                     if ($event_date >= $start_date && $event_date <= $end_date) {
                         print "Processing event file for date $1...\n";
                         my $gzfh = new IO::Zlib;
                         $gzfh->open($_, "rb")
                             or die "Could not open file '$_' $!\n";
-                      
+
                         my $events_belonging_to_course = 0;
                         my $events_not_belonging_to_course = 0;
                         while (my $row = <$gzfh>) {
                             chomp $row;
                             my $event = JSON::XS->new->utf8->decode($row);
-                            
+
                             my $event_user_id = $event->{ "context" }->{ "user_id" };
                             my $event_course_id = $event->{ "context" }->{ "course_id" };
                             my $event_event_type = $event->{ "event_type" };
@@ -308,7 +308,7 @@ if ($input =~ m/^[CEA]$/i) {
                                 $event_date =~ s/-//g;
                             }
                             my $event_source = $event->{ "event_source" };
-                            
+
                             if (index($event_course_id, $organization) != -1 && index($event_course_id, $course_id) != -1 && index($event_course_id, $course_run) != -1) {
                                 if ($event_event_type eq "problem_check") {
                                     my $problem_display_name = $event->{ "context" }->{ "module" }->{ "display_name" };
@@ -343,7 +343,7 @@ if ($input =~ m/^[CEA]$/i) {
                                             }
                                         }
                                     }
-                                    
+
                                     # Post-course survey answers
                                     if ($problem_display_name eq "Post-survey" && $event_event_source eq "server") {
 
@@ -373,7 +373,7 @@ if ($input =~ m/^[CEA]$/i) {
                                             }
                                         }
                                     }
-                                    
+
                                     # Data for specific problem checks
                                     if ($event_event_source eq "server") {
                                         my $table_id = $event->{ "event" }->{ "problem_id" };
@@ -388,7 +388,7 @@ if ($input =~ m/^[CEA]$/i) {
                                         my $latest_problem_time = $student_activity_data{ $event_user_id }{ $table_id }{ "time" };
                                         $latest_problem_time =~ s/"//g;
 
-                                        if (!$student_activity_data{ $event_user_id }{ $table_id }{ "time" } || str2time($event_time) > str2time($latest_problem_time)) 
+                                        if (!$student_activity_data{ $event_user_id }{ $table_id }{ "time" } || str2time($event_time) > str2time($latest_problem_time))
                                         {
                                             $problem_tables{ $table_id } = 1;
 
@@ -400,21 +400,21 @@ if ($input =~ m/^[CEA]$/i) {
                                         }
                                     }
                                 }
-                                
+
                                 # Video interaction events.
-                                if ($event_event_type eq "hide_transcript" || $event_event_type eq "load_video" || $event_event_type eq "pause_video" || 
+                                if ($event_event_type eq "hide_transcript" || $event_event_type eq "load_video" || $event_event_type eq "pause_video" ||
                                     $event_event_type eq "play_video" || $event_event_type eq "seek_video" || $event_event_type eq "show_transcript" ||
                                     $event_event_type eq "speed_change_video" || $event_event_type eq "stop_video" || $event_event_type eq "video_hide_cc_menu" ||
                                     $event_event_type eq "video_show_cc_menu")
                                 {
                                     $student_activity_data{ "video_activity_keys" }{ $event_event_type } = 1;
                                     $student_activity_data{ $event_user_id }{ "video_activity" }{ $event_event_type }++;
-                                    
-                                    my $video_event_event = $event->{ "event" };                               
+
+                                    my $video_event_event = $event->{ "event" };
                                     if ($video_event_event && ref($video_event_event) ne "HASH") {
                                         $video_event_event = JSON::XS->new->utf8->decode($video_event_event);
                                     }
-                                    
+
                                     $event_database_meta{ "video_activity_ng" }{ "user_id" } = "TEXT";
                                     $event_database_meta{ "video_activity_ng" }{ "video_event_id" } = "TEXT";
                                     $event_database_meta{ "video_activity_ng" }{ $event_event_type } = "INTEGER";
@@ -422,47 +422,47 @@ if ($input =~ m/^[CEA]$/i) {
                                     $event_database{ "video_activity_ng" }{ $event_user_id . ":" . $video_event_event->{ "id" }}{ "video_event_id" } = "\"" . $video_event_event->{ "id" } . "\"";
                                     $event_database{ "video_activity_ng" }{ $event_user_id . ":" . $video_event_event->{ "id" }}{ $event_event_type }++;
                                 }
-                                
+
                                 # Problem interaction events.
                                 if ($event_event_type eq "edx.problem.hint.demandhint_displayed" || $event_event_type eq "edx.problem.hint.feedback_displayed" ||
-                                    $event_event_type eq "problem_check" || $event_event_type eq "problem_check_fail" || $event_event_type eq "problem_graded" || 
-                                    $event_event_type eq "problem_rescore" || $event_event_type eq "problem_rescore_fail" || $event_event_type eq "problem_reset" || 
-                                    $event_event_type eq "problem_save" || $event_event_type eq "problem_show" || $event_event_type eq "reset_problem" || 
-                                    $event_event_type eq "reset_problem_fail" || $event_event_type eq "save_problem_fail" || $event_event_type eq "save_problem_success" || 
-                                    $event_event_type eq "show_answer") 
+                                    $event_event_type eq "problem_check" || $event_event_type eq "problem_check_fail" || $event_event_type eq "problem_graded" ||
+                                    $event_event_type eq "problem_rescore" || $event_event_type eq "problem_rescore_fail" || $event_event_type eq "problem_reset" ||
+                                    $event_event_type eq "problem_save" || $event_event_type eq "problem_show" || $event_event_type eq "reset_problem" ||
+                                    $event_event_type eq "reset_problem_fail" || $event_event_type eq "save_problem_fail" || $event_event_type eq "save_problem_success" ||
+                                    $event_event_type eq "show_answer")
                                 {
                                     my $event_event_type_copy = $event_event_type;
-                                
+
                                     if ($event_event_type eq "problem_check") {
                                         $event_event_type_copy = $event_event_type . "_" . $event->{ "event_source" };
                                     }
-                                    
+
                                     $student_activity_data{ "problem_activity_keys" }{ $event_event_type_copy } = 1;
                                     $student_activity_data{ $event_user_id }{ "problem_activity" }{ $event_event_type_copy }++;
                                 }
-                                
+
                                 # Pre-roll video interaction events
-                                if ($event_event_type eq "edx.video.bumper.dismissed" || $event_event_type eq "edx.video.bumper.loaded" || $event_event_type eq "edx.video.bumper.played" || 
-                                    $event_event_type eq "edx.video.bumper.played" || $event_event_type eq "edx.video.bumper.skipped" || $event_event_type eq "edx.video.bumper.stopped" || 
-                                    $event_event_type eq "edx.video.bumper.transcript.hidden" || $event_event_type eq "edx.video.bumper.transcript.menu.hidden" || 
-                                    $event_event_type eq "edx.video.bumper.transcript.menu.shown" || $event_event_type eq "edx.video.bumper.transcript.shown") 
+                                if ($event_event_type eq "edx.video.bumper.dismissed" || $event_event_type eq "edx.video.bumper.loaded" || $event_event_type eq "edx.video.bumper.played" ||
+                                    $event_event_type eq "edx.video.bumper.played" || $event_event_type eq "edx.video.bumper.skipped" || $event_event_type eq "edx.video.bumper.stopped" ||
+                                    $event_event_type eq "edx.video.bumper.transcript.hidden" || $event_event_type eq "edx.video.bumper.transcript.menu.hidden" ||
+                                    $event_event_type eq "edx.video.bumper.transcript.menu.shown" || $event_event_type eq "edx.video.bumper.transcript.shown")
                                 {
                                     $student_activity_data{ "pre_roll_video_activity_keys" }{ $event_event_type } = 1;
                                     $student_activity_data{ $event_user_id }{ "pre_roll_video_activity" }{ $event_event_type }++;
                                 }
-                                
+
                                 # Textbook interaction events
-                                if ($event_event_type eq "book" || $event_event_type eq "textbook.pdf.thumbnails.toggled" || $event_event_type eq "textbook.pdf.thumbnail.navigated" || 
-                                    $event_event_type eq "textbook.pdf.outline.toggled" || $event_event_type eq "textbook.pdf.chapter.navigated" || $event_event_type eq "textbook.pdf.page.navigated" || 
-                                    $event_event_type eq "textbook.pdf.zoom.buttons.changed" || $event_event_type eq "textbook.pdf.zoom.menu.changed" || 
+                                if ($event_event_type eq "book" || $event_event_type eq "textbook.pdf.thumbnails.toggled" || $event_event_type eq "textbook.pdf.thumbnail.navigated" ||
+                                    $event_event_type eq "textbook.pdf.outline.toggled" || $event_event_type eq "textbook.pdf.chapter.navigated" || $event_event_type eq "textbook.pdf.page.navigated" ||
+                                    $event_event_type eq "textbook.pdf.zoom.buttons.changed" || $event_event_type eq "textbook.pdf.zoom.menu.changed" ||
                                     $event_event_type eq "textbook.pdf.display.scaled" || $event_event_type eq "textbook.pdf.display.scrolled" ||
                                     $event_event_type eq "textbook.pdf.search.executed" || $event_event_type eq "textbook.pdf.search.navigatednext" ||
-                                    $event_event_type eq "textbook.pdf.search.highlight.toggled" || $event_event_type eq "textbook.pdf.search.casesensitivity.toggled") 
+                                    $event_event_type eq "textbook.pdf.search.highlight.toggled" || $event_event_type eq "textbook.pdf.search.casesensitivity.toggled")
                                 {
                                     $student_activity_data{ "textbook_activity_keys" }{ $event_event_type } = 1;
                                     $student_activity_data{ $event_user_id }{ "textbook_activity" }{ $event_event_type }++;
                                 }
-                                
+
                                 # Web page activity
                                 if ($event_event_type =~ /\/progress$/) {
                                     $event_database{ "page_activity_progress" }{ $event_user_id }{ "user_id" } = "\"" . $event_user_id . "\"";
@@ -486,7 +486,7 @@ if ($input =~ m/^[CEA]$/i) {
                                 $events_not_belonging_to_course++;
                             }
                         }
-                        
+
                         print "Found $events_belonging_to_course events that belongs to course.\nDiscarded $events_not_belonging_to_course events that does not belong to this course.\n\n";
                         $gzfh->close();
                     }
@@ -536,7 +536,7 @@ if ($input =~ m/^[CEA]$/i) {
         create_std_user_table_from_table_names_stored_as_keys($dbh, "problem_activity", "INTEGER", %{ $student_activity_data{ "problem_activity_keys" } });
         create_std_user_table_from_table_names_stored_as_keys($dbh, "pre_roll_video_activity", "INTEGER", %{ $student_activity_data{ "pre_roll_video_activity_keys" } });
         create_std_user_table_from_table_names_stored_as_keys($dbh, "textbook_activity", "INTEGER", %{ $student_activity_data{ "textbook_activity_keys" } });
-        
+
         foreach my $problem_table_id (keys %problem_tables) {
             create_std_user_table_from_table_names_stored_as_keys($dbh, $problem_table_id, "INTEGER", %{ $student_activity_data{ $problem_table_id . "_keys" } });
         }
@@ -549,18 +549,18 @@ if ($input =~ m/^[CEA]$/i) {
             insert_student_activity_data_into_table($dbh, $student_id, $activity_data, "problem_activity");
             insert_student_activity_data_into_table($dbh, $student_id, $activity_data, "pre_roll_video_activity");
             insert_student_activity_data_into_table($dbh, $student_id, $activity_data, "textbook_activity");
-            
+
             foreach my $problem_table_id (keys %problem_tables) {
                 insert_student_activity_data_into_table($dbh, $student_id, $activity_data, $problem_table_id);
             }
-        }   
-        
+        }
+
         # Next gen event processing
         keys %event_database_meta;
         while (my($table_id, $table_metadata) = each %event_database_meta) {
             create_table($dbh, $table_id, $table_metadata);
         }
-        
+
         keys %event_database;
         while (my($table_id, $table_data) = each %event_database) {
             foreach my $row_data (values %{ $table_data }) {
@@ -570,7 +570,7 @@ if ($input =~ m/^[CEA]$/i) {
 
         print $info_fh "\n";
     }
-    
+
     # Export the whole database as .csv files
     foreach my $table_iter ($dbh->tables()) {
         if (index($table_iter, "sqlite") == -1 && $table_iter =~ /"main"\."([^"]+)"/) {
@@ -609,21 +609,21 @@ if ($input =~ m/^[CEA]$/i) {
 sub is_better_snapshot_date {
     my ($current_date, $potential_date, $goal_date) = @_;
     my $res = 0;
-    
+
     if (!defined($current_date)) {
         $res = 1;
     } else {
         my $cd_gd_delta = $goal_date - $current_date; #Delta_Days($current_date, $goal_date);
         my $cd_pd_delta = $potential_date - $current_date; #Delta_Days($current_date, $potential_date);
         my $pd_gd_delta = $goal_date - $potential_date; #Delta_Days($potential_date, $goal_date);
-        
+
         if ($cd_gd_delta > 0) { # current date is smaller than goal date
             $res = $cd_pd_delta > 0 || abs($pd_gd_delta) < abs($cd_gd_delta);
         } elsif ($cd_gd_delta < 0) { # current date is larger than goal date
             $res = abs($pd_gd_delta) < abs($cd_gd_delta);
         }
     }
-    
+
     return $res;
 }
 
@@ -638,9 +638,9 @@ sub exec_query {
 
 sub create_std_user_table_from_table_names_stored_as_keys {
     my ($dbh, $table_name, $value_type, %table_names_stored_as_keys) = @_;
-    
+
     (my $sanitized_table_name = $table_name) =~ s/[^A-Za-z0-9_]//g;
-    
+
     my $create_table_sql = "CREATE TABLE $sanitized_table_name(user_id TEXT";
     foreach my $key (keys %table_names_stored_as_keys) {
         my @key_split = split(/:/, $key);
@@ -656,10 +656,10 @@ sub create_std_user_table_from_table_names_stored_as_keys {
 
 sub insert_student_activity_data_into_table {
     my ($dbh, $student_id, $activity_data, $activity_data_type, $key_replace_sub) = @_;
-    
+
     (my $sanitized_table_name = $activity_data_type) =~ s/[^A-Za-z0-9_]//g;
-    
-    if ($activity_data->{ $activity_data_type }) {   
+
+    if ($activity_data->{ $activity_data_type }) {
         my $insert_values_sql = "INSERT INTO $sanitized_table_name (user_id,";
         foreach my $key (keys %{ $activity_data->{ $activity_data_type } }) {
             if ($key_replace_sub) {
@@ -680,9 +680,9 @@ sub insert_student_activity_data_into_table {
 
 sub create_table {
     my ($dbh, $table_name, $column_ids) = @_;
-    
+
     (my $sanitized_table_name = $table_name) =~ s/[^A-Za-z0-9_]//g;
-    
+
     my $create_table_sql = "CREATE TABLE $sanitized_table_name(";
     keys %{ $column_ids };
     while (my($col_id, $col_data_type) = each %{ $column_ids }) {
@@ -695,9 +695,9 @@ sub create_table {
 
 sub insert_row_into_table {
     my ($dbh, $table_name, $row_data) = @_;
-    
+
     (my $sanitized_table_name = $table_name) =~ s/[^A-Za-z0-9_]//g;
-    
+
     my $insert_values_sql = "INSERT INTO $sanitized_table_name (";
     foreach my $column_id (keys %{ $row_data }) {
         $insert_values_sql .= "$column_id,";
@@ -714,7 +714,7 @@ sub insert_row_into_table {
 
 sub is_column_allowed {
     my ($table_name, $column_index) = @_;
-    
+
     if ($table_name eq "auth_userprofile") {
         return $auth_userprofile_allowed_rows[$column_index];
     } elsif ($table_name eq "certificates_generatedcertificate") {
