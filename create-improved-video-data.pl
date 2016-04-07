@@ -86,6 +86,11 @@ if (-d $dest_dir) {
                 {
                     my $event_name = $event->{ "name" };
 
+                    if (not defined $event_name)
+                    {
+                        $event_name = $event_event_type;
+                    }
+
                     $student_activity_video_keys{ $event_name } = 1;
                     $student_activity_video_data{ $event_user_id }{ $event_name }++;
 
