@@ -45,6 +45,9 @@ if (-d $dest_dir) {
     my %student_activity_video_ng2_keys = ();
     my %student_activity_video_ng2_data = ();
 
+    my $error_log_filename = "$dest_dir/errors.txt";
+    open (my $error_log_fh, '>', $error_log_filename) or die "Failed to open file '$error_log_filename' for writing.";
+
     # Iterate through all the event data files and do stuff with the video data.
     my @event_data_files = grep { -f } glob $data_folder . '/events/*';
     foreach (@event_data_files) {
@@ -96,40 +99,46 @@ if (-d $dest_dir) {
 
                     my $video_event_event = $event->{ "event" };
                     if ($video_event_event && ref($video_event_event) ne "HASH") {
+                        my $video_event_event_json_str = $video_event_event;
                         $video_event_event = JSON::XS->new->utf8->decode($video_event_event);
 
-                        $student_activity_video_ng_keys{ $event_name } = 1;
-                        $student_activity_video_ng_data{ $event_user_id . ":" . $video_event_event->{ "id" } }{ "user_id" } = $event_user_id;
-                        $student_activity_video_ng_data{ $event_user_id . ":" . $video_event_event->{ "id" } }{ "video_event_id" } = $video_event_event->{ "id" };
-                        $student_activity_video_ng_data{ $event_user_id . ":" . $video_event_event->{ "id" } }{ $event_name }++;
+                        if (defined $video_event_event->{ "id" }) {
+                            $student_activity_video_ng_keys{ $event_name } = 1;
+                            $student_activity_video_ng_data{ $event_user_id . ":" . $video_event_event->{ "id" } }{ "user_id" } = $event_user_id;
+                            $student_activity_video_ng_data{ $event_user_id . ":" . $video_event_event->{ "id" } }{ "video_event_id" } = $video_event_event->{ "id" };
+                            $student_activity_video_ng_data{ $event_user_id . ":" . $video_event_event->{ "id" } }{ $event_name }++;
 
-                        if (defined $video_event_event->{ "currentTime" })
-                        {
-                            my $time_compartment = int($video_event_event->{ "currentTime" } / 5); # Divide everything into 5 second (?) time compartments.
-                            $student_activity_video_ng2_keys{ $event_name } = 1;
-                            $student_activity_video_ng2_data{ $event_user_id . ":" . $video_event_event->{ "id" } . ":" . $time_compartment }{ "user_id" } = $event_user_id;
-                            $student_activity_video_ng2_data{ $event_user_id . ":" . $video_event_event->{ "id" } . ":" . $time_compartment }{ "video_event_id" } = $video_event_event->{ "id" };
-                            $student_activity_video_ng2_data{ $event_user_id . ":" . $video_event_event->{ "id" } . ":" . $time_compartment }{ "time_compartment" } = $time_compartment;
-                            $student_activity_video_ng2_data{ $event_user_id . ":" . $video_event_event->{ "id" } . ":" . $time_compartment }{ $event_name }++;
-                        }
-                        elsif (defined $video_event_event->{ "old_time" } && defined $video_event_event->{ "new_time" })
-                        {
-                            my $time_compartment_old_time = int($video_event_event->{ "old_time" } / 5); # Divide everything into 5 second (?) time compartments.
-                            my $time_compartment_new_time = int($video_event_event->{ "new_time" } / 5); # Divide everything into 5 second (?) time compartments.
-                            my $event_type_old_time = $event_name . "_start";
-                            my $event_type_new_time = $event_name . "_end";
+                            if (defined $video_event_event->{ "currentTime" })
+                            {
+                                my $time_compartment = int($video_event_event->{ "currentTime" } / 5); # Divide everything into 5 second (?) time compartments.
+                                $student_activity_video_ng2_keys{ $event_name } = 1;
+                                $student_activity_video_ng2_data{ $event_user_id . ":" . $video_event_event->{ "id" } . ":" . $time_compartment }{ "user_id" } = $event_user_id;
+                                $student_activity_video_ng2_data{ $event_user_id . ":" . $video_event_event->{ "id" } . ":" . $time_compartment }{ "video_event_id" } = $video_event_event->{ "id" };
+                                $student_activity_video_ng2_data{ $event_user_id . ":" . $video_event_event->{ "id" } . ":" . $time_compartment }{ "time_compartment" } = $time_compartment;
+                                $student_activity_video_ng2_data{ $event_user_id . ":" . $video_event_event->{ "id" } . ":" . $time_compartment }{ $event_name }++;
+                            }
+                            elsif (defined $video_event_event->{ "old_time" } && defined $video_event_event->{ "new_time" })
+                            {
+                                my $time_compartment_old_time = int($video_event_event->{ "old_time" } / 5); # Divide everything into 5 second (?) time compartments.
+                                my $time_compartment_new_time = int($video_event_event->{ "new_time" } / 5); # Divide everything into 5 second (?) time compartments.
+                                my $event_type_old_time = $event_name . "_start";
+                                my $event_type_new_time = $event_name . "_end";
 
-                            $student_activity_video_ng2_keys{ $event_type_old_time } = 1;
-                            $student_activity_video_ng2_data{ $event_user_id . ":" . $video_event_event->{ "id" } . ":" . $time_compartment_old_time }{ "user_id" } = $event_user_id;
-                            $student_activity_video_ng2_data{ $event_user_id . ":" . $video_event_event->{ "id" } . ":" . $time_compartment_old_time }{ "video_event_id" } = $video_event_event->{ "id" };
-                            $student_activity_video_ng2_data{ $event_user_id . ":" . $video_event_event->{ "id" } . ":" . $time_compartment_old_time }{ "time_compartment" } = $time_compartment_old_time;
-                            $student_activity_video_ng2_data{ $event_user_id . ":" . $video_event_event->{ "id" } . ":" . $time_compartment_old_time }{ $event_type_old_time }++;
+                                $student_activity_video_ng2_keys{ $event_type_old_time } = 1;
+                                $student_activity_video_ng2_data{ $event_user_id . ":" . $video_event_event->{ "id" } . ":" . $time_compartment_old_time }{ "user_id" } = $event_user_id;
+                                $student_activity_video_ng2_data{ $event_user_id . ":" . $video_event_event->{ "id" } . ":" . $time_compartment_old_time }{ "video_event_id" } = $video_event_event->{ "id" };
+                                $student_activity_video_ng2_data{ $event_user_id . ":" . $video_event_event->{ "id" } . ":" . $time_compartment_old_time }{ "time_compartment" } = $time_compartment_old_time;
+                                $student_activity_video_ng2_data{ $event_user_id . ":" . $video_event_event->{ "id" } . ":" . $time_compartment_old_time }{ $event_type_old_time }++;
 
-                            $student_activity_video_ng2_keys{ $event_type_new_time } = 1;
-                            $student_activity_video_ng2_data{ $event_user_id . ":" . $video_event_event->{ "id" } . ":" . $time_compartment_new_time }{ "user_id" } = $event_user_id;
-                            $student_activity_video_ng2_data{ $event_user_id . ":" . $video_event_event->{ "id" } . ":" . $time_compartment_new_time }{ "video_event_id" } = $video_event_event->{ "id" };
-                            $student_activity_video_ng2_data{ $event_user_id . ":" . $video_event_event->{ "id" } . ":" . $time_compartment_new_time }{ "time_compartment" } = $time_compartment_new_time;
-                            $student_activity_video_ng2_data{ $event_user_id . ":" . $video_event_event->{ "id" } . ":" . $time_compartment_new_time }{ $event_type_new_time }++;
+                                $student_activity_video_ng2_keys{ $event_type_new_time } = 1;
+                                $student_activity_video_ng2_data{ $event_user_id . ":" . $video_event_event->{ "id" } . ":" . $time_compartment_new_time }{ "user_id" } = $event_user_id;
+                                $student_activity_video_ng2_data{ $event_user_id . ":" . $video_event_event->{ "id" } . ":" . $time_compartment_new_time }{ "video_event_id" } = $video_event_event->{ "id" };
+                                $student_activity_video_ng2_data{ $event_user_id . ":" . $video_event_event->{ "id" } . ":" . $time_compartment_new_time }{ "time_compartment" } = $time_compartment_new_time;
+                                $student_activity_video_ng2_data{ $event_user_id . ":" . $video_event_event->{ "id" } . ":" . $time_compartment_new_time }{ $event_type_new_time }++;
+                            }
+                        } else {
+                            print "Found a video event without ID:\n$row\nSkipping it.\n";
+                            print $error_log_fh "Found a video event without ID:\n$row\nSkipping it.\n";
                         }
                     }
                 }
