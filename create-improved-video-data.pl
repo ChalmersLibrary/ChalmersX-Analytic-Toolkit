@@ -46,7 +46,7 @@ if (-d $dest_dir) {
     my %student_activity_video_ng2_data = ();
 
     my $error_log_filename = "$dest_dir/errors.txt";
-    open (my $error_log_fh, '>', $error_log_filename) or die "Failed to open file '$error_log_filename' for writing.";
+    open (my $error_log_fh, '>:encoding(UTF-8)', $error_log_filename) or die "Failed to open file '$error_log_filename' for writing.";
 
     # Iterate through all the event data files and do stuff with the video data.
     my @event_data_files = grep { -f } glob $data_folder . '/events/*';
@@ -148,7 +148,7 @@ if (-d $dest_dir) {
 
     # Build video activity table with aggregated data.
     my $filename = "$dest_dir/video_activity.csv";
-    open (my $va_fh, '>', $filename) or die "Failed to open file '$filename' for writing.";
+    open (my $va_fh, '>:encoding(UTF-8)', $filename) or die "Failed to open file '$filename' for writing.";
 
     my $csv_first_line = "user_id,";
     foreach my $key (keys %student_activity_video_keys) {
@@ -173,7 +173,7 @@ if (-d $dest_dir) {
 
     # Build video activity ng table with aggregated data.
     $filename = "$dest_dir/video_activity_ng.csv";
-    open (my $vang_fh, '>', $filename) or die "Failed to open file '$filename' for writing.";
+    open (my $vang_fh, '>:encoding(UTF-8)', $filename) or die "Failed to open file '$filename' for writing.";
 
     $csv_first_line = "user_id,video_event_id,";
     foreach my $key (keys %student_activity_video_ng_keys) {
@@ -199,7 +199,7 @@ if (-d $dest_dir) {
 
     # Build video activity ng2 table with aggregated data.
     $filename = "$dest_dir/video_activity_ng2.csv";
-    open (my $vang2_fh, '>', $filename) or die "Failed to open file '$filename' for writing.";
+    open (my $vang2_fh, '>:encoding(UTF-8)', $filename) or die "Failed to open file '$filename' for writing.";
 
     $csv_first_line = "user_id,video_event_id,time_compartment,";
     foreach my $key (keys %student_activity_video_ng2_keys) {

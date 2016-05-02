@@ -160,7 +160,7 @@ if (-d $dest_dir) {
     
     # Save pre survey answers to file
     my $filename = "$dest_dir/pre_survey_answers.csv";
-    open (my $fh, '>', $filename) or die "Failed to open file '$filename' for writing.";
+    open (my $fh, '>:encoding(UTF-8)', $filename) or die "Failed to open file '$filename' for writing.";
     
     my $csv_first_line = "user_id,";
     foreach my $pre_survey_problem_name (keys %student_pre_survey_keys) {
@@ -186,7 +186,7 @@ if (-d $dest_dir) {
     
     # Save post survey answers to file
     $filename = "$dest_dir/post_survey_answers.csv";
-    open ($fh, '>', $filename) or die "Failed to open file '$filename' for writing.";
+    open ($fh, '>:encoding(UTF-8)', $filename) or die "Failed to open file '$filename' for writing.";
     
     $csv_first_line = "user_id,";
     foreach my $post_survey_problem_name (keys %student_post_survey_keys) {

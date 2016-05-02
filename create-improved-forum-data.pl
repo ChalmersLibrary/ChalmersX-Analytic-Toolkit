@@ -67,7 +67,7 @@ if (-d $dest_dir) {
             my @forum_posts_ordered_by_created_asc = sort { $a->{ "created_at" }->{ '$date' } cmp $b->{ "created_at" }->{ '$date' } } @forum_posts;
             
             my $filename = "$dest_dir/discussion_forum_activity_ng.csv";
-            open (my $dfang_fh, '>', $filename) or die "Failed to open file '$filename' for writing.";
+            open (my $dfang_fh, '>:encoding(UTF-8)', $filename) or die "Failed to open file '$filename' for writing.";
             
             print $dfang_fh "id,poster,thread,response_to\n";
             
@@ -87,7 +87,7 @@ if (-d $dest_dir) {
             
             # Build old discussion forum table with aggregated data.
             $filename = "$dest_dir/discussion_forum_activity.csv";
-            open (my $dfa_fh, '>', $filename) or die "Failed to open file '$filename' for writing.";
+            open (my $dfa_fh, '>:encoding(UTF-8)', $filename) or die "Failed to open file '$filename' for writing.";
             
             my $csv_first_line = "user_id,";
             foreach my $key (keys %student_activity_forum_keys) {
