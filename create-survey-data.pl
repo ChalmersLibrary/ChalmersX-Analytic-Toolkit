@@ -25,7 +25,7 @@ print "=========================================================================
 print "Please enter the name for the folder with the event data for one specific course.\nThis folder is created if you run get-data-for-course.pl.\n> ";
 my $data_folder = <>;
 chomp $data_folder;
-print "Thank you!\n\nI will put the generated data in $data_folder/survey-data.\n\nCreating improved video data...\n";
+print "Thank you!\n\nI will put the generated data in $data_folder/survey-data.\n\nCreating survey data...\n";
 
 # Check if something exists with the same name as our destination directory.
 my $dest_dir = "$data_folder/survey-data";
