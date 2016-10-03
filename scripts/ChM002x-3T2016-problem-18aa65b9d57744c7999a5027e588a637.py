@@ -79,8 +79,9 @@ class EdxDataEventProcessor:
     def csvDataRow(self, eventData):
         res = str(eventData["context"]["user_id"]) + "," + eventData["time"]
         for problemKey in self.problems:
-            res += "," + eventData["event"]["answers"][problemKey]
+            res += ',"' + eventData["event"]["answers"][problemKey].replace('"', '""') + '"'
         return res
+        
         
         
 print "[1] Checking if events folder is present..."
