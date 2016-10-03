@@ -80,10 +80,10 @@ class EdxDataEventProcessor:
     def csvDataRow(self, eventData):
         res = str(eventData["context"]["user_id"]) + "," + eventData["time"]
         for problemKey in self.problems:
-            if isinstance(eventData["event"]["answers"][problemKey], collections.Sequence):
+            if isinstance(eventData["event"]["answers"].get(problemKey, None), collections.Sequence):
                 res += "," + ",".join(eventData["event"]["answers"][problemKey])
             else:
-                res += "," + eventData["event"]["answers"][problemKey]
+                res += "," + eventData["event"]["answers"].get(problemKey, "")
         return res
         
         
