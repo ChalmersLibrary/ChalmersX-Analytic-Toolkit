@@ -81,9 +81,9 @@ class EdxDataEventProcessor:
         for problemKey in self.problems:
             if problemKey in eventData["event"]["answers"]:
                 if isinstance(eventData["event"]["answers"][problemKey], str) or isinstance(eventData["event"]["answers"][problemKey], unicode):
-                    res += "," + eventData["event"]["answers"][problemKey]
+                    res += ',"' + eventData["event"]["answers"][problemKey].replace('"', '""') + '"'
                 else:
-                    res += "," + ",".join(eventData["event"]["answers"][problemKey])                    
+                    res += ',"' + '","'.join(eventData["event"]["answers"][problemKey]) + '"'
             else:
                 res += ","
         return res
@@ -114,6 +114,6 @@ if os.path.isdir(dataFolder):
                 for line in zippedLogFile:
                     jsonData = json.loads(line)
                     if eventProcessor.filter(jsonData):
-                        outputFile.write(eventProcessor.csvDataRow(jsonData) + "\n")
+                        outputFile.write(eventProcessor.csvDataRow(jsonData).encode("utf-8") + "\n")
 else:
     print "[1] Events folder is missing. It should be in the same folder as the script."
